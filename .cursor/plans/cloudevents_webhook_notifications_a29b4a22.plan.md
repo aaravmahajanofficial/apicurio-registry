@@ -12,7 +12,7 @@ todos:
     content: "WebhookUrlValidator + WebhookSsrfGuard: HTTPS-only, IP denylist, DNS re-resolve, no redirects, HMAC signing, SSRF security tests"
     status: pending
   - id: phase3-cloudevents
-    content: CloudEventsMapper + WebhookFanoutProcessor (AFTER_SUCCESS) + WebhookFanoutReconciler
+    content: CloudEventsMapper + WebhookFanoutProcessor (observes SqlOutboxEvent AFTER_SUCCESS) + WebhookFanoutReconciler
     status: pending
   - id: phase4-rule-violations
     content: RuleViolationEmitter in RulesServiceImpl for io.apicurio.registry.rule.violated.v1
@@ -104,7 +104,7 @@ handle.createUpdate(sqlStatements.deleteOutboxEvent())...execute();
 
 | Existing capability | Location                                                                                                       | How webhooks use it                                                                                                        |
 | ------------------- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Storage write hooks | `SqlOutboxEvent` CDI events from repositories                                                                  | `WebhookFanoutProcessor` listens **after commit** on the same `SqlOutboxEvent` — no changes to artifact write transactions |
+| Storage write hooks | `SqlOutboxEvent` CDI events from repositories                                                                  | `WebhookFanoutProcessor` **observes the same CDI `SqlOutboxEvent`** as `SqlEventsProcessor` (Debezium path) — **does not read the `outbox` table** |
 | Event payloads      | `app/.../events/*.java` + `StorageEventType`                                                                   | `CloudEventsMapper` translates existing JSON into CloudEvents v1.0 envelopes                                               |
 | HTTP client         | `[HttpClientService](app/src/main/java/io/apicurio/registry/http/HttpClientService.java)` + Vert.x `WebClient` | `WebhookHttpClient` reuses the same `WebClientProducer` connection pool                                                    |
 | Scheduled workers   | `UsageTelemetryBuffer`, `DownloadReaper`                                                                       | `WebhookDeliveryWorker` follows the same `@Scheduled` + PostgreSQL pattern                                                 |
@@ -248,6 +248,8 @@ flowchart TB
         end
         subgraph core [Core]
             RulesSvc[RulesServiceImpl]
+            CDI[CDI SqlOutboxEvent]
+            SqlEventsProc[SqlEventsProcessor]
             FanoutProc[WebhookFanoutProcessor]
             FanoutRecon[WebhookFanoutReconciler]
             RuleEmitter[RuleViolationEmitter]
@@ -275,8 +277,11 @@ flowchart TB
     GroupsAPI --> RulesSvc
     RulesSvc -->|on violation| RuleEmitter
     GroupsAPI --> Artifacts
-    GroupsAPI --> Outbox
-    FanoutProc -->|"AFTER_SUCCESS new TX"| Fanout
+    GroupsAPI -->|storage write| CDI
+    CDI -->|@Observes sync| SqlEventsProc
+    SqlEventsProc -->|INSERT+DELETE Debezium CDC| Outbox
+    CDI -->|"@TransactionalEventListener AFTER_SUCCESS"| FanoutProc
+    FanoutProc -->|"new TX"| Fanout
     FanoutProc --> Queue
     FanoutRecon -->|"replays missed fanout"| Queue
     RuleEmitter -->|"separate TX"| Queue
@@ -360,6 +365,8 @@ sequenceDiagram
     participant GroupsAPI as GroupsResourceImpl
     participant RulesSvc as RulesServiceImpl
     participant Storage as SqlVersionRepository
+    participant CDI as CDI Event Bus
+    participant SqlEventsProc as SqlEventsProcessor
     participant OutboxRepo as SqlEventRepository
     participant PG as PostgreSQL
     participant Fanout as WebhookFanoutProcessor
@@ -370,14 +377,16 @@ sequenceDiagram
     GroupsAPI->>Storage: createArtifactVersion
     Storage->>PG: BEGIN
     Storage->>PG: INSERT versions row state=ENABLED
-    Storage->>OutboxRepo: fire ARTIFACT_VERSION_CREATED
-    OutboxRepo->>PG: INSERT outbox row
+    Storage->>CDI: fire SqlOutboxEvent
+    CDI->>SqlEventsProc: @Observes sync
+    SqlEventsProc->>OutboxRepo: createEvent INSERT+DELETE
+    OutboxRepo->>PG: outbox row ephemeral
     Storage->>PG: COMMIT
-    Note over Storage,PG: Artifact TX ends here — zero webhook code in hot path
+    Note over Storage,PG: Artifact TX ends — webhook does not read outbox table
     GroupsAPI-->>CI: 201 Created version 3.2.0
-    Fanout->>PG: BEGIN new TX AFTER_SUCCESS
-    Fanout->>PG: match subscriptions + INSERT webhook_deliveries
-    Fanout->>PG: INSERT webhook_fanout DONE
+    CDI->>Fanout: AFTER_SUCCESS observes same SqlOutboxEvent
+    Fanout->>PG: BEGIN new TX
+    Fanout->>PG: persist sourcePayload + match + INSERT webhook_deliveries
     Fanout->>PG: COMMIT
 ```
 
@@ -388,11 +397,11 @@ sequenceDiagram
 | ---- | ------- | ---------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------- |
 | 1    | T+0ms   | `GroupsResourceImpl`         | REST entry point; validates request, calls rules, delegates to storage   | Already exists; webhook hooks downstream           |
 | 2    | T+5ms   | `RulesServiceImpl`           | Runs BACKWARD compatibility                                              | Unchanged; producer gets immediate pass/fail       |
-| 3    | T+15ms  | `SqlVersionRepository`       | Writes version row, fires `SqlOutboxEvent`                               | Canonical storage path                             |
-| 4    | T+16ms  | `SqlEventRepository`         | INSERT then DELETE `outbox` row (Debezium CDC pattern)                   | Ephemeral outbox; **not** a webhook replay source  |
+| 3    | T+15ms  | `SqlVersionRepository`       | Writes version row, fires `SqlOutboxEvent` via CDI                       | Canonical storage path                             |
+| 4    | T+16ms  | `SqlEventsProcessor`         | `@Observes` same CDI event → `SqlEventRepository` INSERT+DELETE `outbox` (Debezium only) | Webhook is a **separate** observer; does not use this path |
 | 5    | T+20ms  | PostgreSQL `COMMIT`          | Version committed; outbox row already deleted                            | Artifact write latency identical to today          |
 | 6    | T+25ms  | Response to CI               | `201 Created`                                                            | CI completes before fanout runs                    |
-| 7    | T+25ms+ | `WebhookFanoutProcessor`     | `AFTER_SUCCESS`: persist `sourcePayload` → match → enqueue → mark DONE   | Fanout failure cannot roll back version write      |
+| 7    | T+25ms+ | `WebhookFanoutProcessor`     | `AFTER_SUCCESS` on same `SqlOutboxEvent`: persist `sourcePayload` → match → enqueue | Independent observer; payload from CDI event in memory, not outbox table |
 | 8    | T+26ms+ | `WebhookSubscriptionMatcher` | Filter by group/type/event                                               | Outside hot path; table growth affects fanout only |
 | 9    | T+27ms+ | `CloudEventsMapper`          | Build CloudEvent; `cloudEventId` = UUID v5 from `outboxEventId` (§2.4.1) | Deterministic ID for reconciler replay             |
 
@@ -578,7 +587,7 @@ POST /apis/registry/v3/groups/prod/artifacts/orders/versions
 | **GitHub Webhooks**            | HTTP POST on repo events; HMAC-SHA256 `X-Hub-Signature-256`; configurable event filter; retries with exponential backoff; delivery log in UI     | HMAC signing; per-subscription event type filter; admin-managed subscriptions; delivery history API       | GitHub delivers synchronously-ish with fast retry; we use DB-backed queue for multi-instance + survival across restarts |
 | **Stripe Webhooks**            | Signed events (`Stripe-Signature` with timestamp); idempotency via event `id`; exponential backoff over 3 days; separate `event` object envelope | Signature header with timestamp tolerance; immutable event `id` for dedup; dead-letter after max attempts | Stripe uses internal distributed queue; we use PostgreSQL `SKIP LOCKED` (simpler ops for registry deployments)          |
 | **Kafka Connect**              | At-least-once delivery; offset commit after sink ack; independent retry for sink failures                                                        | At-least-once semantics; never lose events on subscriber downtime                                         | Connect preserves per-partition ordering; webhooks explicitly **do not** guarantee global ordering (see §2.7)           |
-| **Apicurio outbox + Debezium** | Ephemeral INSERT+DELETE for CDC                                                                                                                  | Fanout reads CDI event payload; persists to `webhook_fanout.sourcePayload`                                | Webhooks complementary, not replacement                                                                                 |
+| **Apicurio outbox + Debezium** | Ephemeral INSERT+DELETE for CDC                                                                                                                  | `SqlEventsProcessor` observes CDI event → outbox; `WebhookFanoutProcessor` observes **same** CDI event independently | Webhooks complementary, not replacement; outbox remains Debezium-only |
 
 
 ---
@@ -610,7 +619,7 @@ Downstream systems need a **standard, versioned envelope** so event routers, Kna
 | Attribute             | Value                                           | Notes                                          |
 | --------------------- | ----------------------------------------------- | ---------------------------------------------- |
 | `specversion`         | `"1.0"`                                         | CloudEvents v1.0                               |
-| `id`                  | UUID v4                                         | Stable across retries; dedup key               |
+| `id`                  | Deterministic UUID v5 from `outboxEventId`; UUID v4 only for `rule.violated.v1` (no outbox event) | Stable across retries and fanout replays; consumer dedup key (see §2.4.1) |
 | `source`              | `"/apis/registry/v3"`                           | Constant URI-reference                         |
 | `type`                | See table below                                 | Versioned reverse-DNS                          |
 | `subject`             | `"{groupId}/{artifactId}"` or `".../{version}"` | Optional for rule.violated                     |
@@ -643,7 +652,7 @@ Downstream systems need a **standard, versioned envelope** so event routers, Kna
 | `DISABLED`, `SUNSET` | `artifact.version.state_changed.v1` |
 
 
-**Architecture unchanged:** all seven types are produced by `CloudEventsMapper` inside the existing `WebhookFanoutProcessor` post-commit path. No new tables, queues, or delivery components.
+**Architecture unchanged:** all seven types are produced by `CloudEventsMapper` inside `WebhookFanoutProcessor`, which **observes the same CDI `SqlOutboxEvent`** as the Debezium path — not the `outbox` table.
 
 ### Concrete payload examples
 
@@ -971,6 +980,7 @@ Registry writes must not block on subscriber HTTP latency, yet subscribers expec
 sequenceDiagram
     participant API as GroupsResourceImpl
     participant Storage as SqlVersionRepository
+    participant CDI as CDI SqlOutboxEvent
     participant PG as PostgreSQL
     participant Fanout as WebhookFanoutProcessor
     participant Worker as WebhookDeliveryWorker
@@ -978,11 +988,13 @@ sequenceDiagram
 
     API->>Storage: createArtifactVersion()
     Storage->>PG: BEGIN
-    Storage->>PG: INSERT version + outbox
+    Storage->>PG: INSERT version
+    Storage->>CDI: fire SqlOutboxEvent
+    Note over Storage,CDI: SqlEventsProcessor writes ephemeral outbox for Debezium
     Storage->>PG: COMMIT
     Note over Storage,PG: No webhook tables in artifact TX
 
-    Fanout->>PG: AFTER_SUCCESS fanout TX
+    CDI->>Fanout: AFTER_SUCCESS observes SqlOutboxEvent
     Fanout->>PG: INSERT webhook_deliveries PENDING
 
     loop every poll interval
@@ -1004,6 +1016,27 @@ sequenceDiagram
 ```
 
 
+
+### Dual-observer CDI architecture (maintainer alignment)
+
+Storage repositories fire `SqlOutboxEvent` via CDI (`Event<SqlOutboxEvent>.fire()`). **Two independent observers** consume the same event — the outbox table is used by only one of them:
+
+```mermaid
+flowchart LR
+    Storage[SqlVersionRepository etc.] -->|fire| CDI[SqlOutboxEvent]
+    CDI -->|@Observes sync| SqlEventsProc[SqlEventsProcessor]
+    CDI -->|"@TransactionalEventListener AFTER_SUCCESS"| FanoutProc[WebhookFanoutProcessor]
+    SqlEventsProc -->|INSERT+DELETE| Outbox[(outbox table)]
+    Outbox -->|CDC| Debezium[Debezium to Kafka]
+    FanoutProc -->|persist + enqueue| WebhookTables[(webhook_fanout / webhook_deliveries)]
+```
+
+| Observer | Mechanism | Purpose | Reads `outbox` table? |
+| -------- | --------- | ------- | --------------------- |
+| `SqlEventsProcessor` | `@Observes SqlOutboxEvent` (sync, in artifact TX) | Debezium transactional outbox CDC | **Writes** ephemeral rows only |
+| `WebhookFanoutProcessor` | `@TransactionalEventListener(AFTER_SUCCESS)` on `SqlOutboxEvent` | HTTP webhook fanout | **No** — uses in-memory `OutboxEvent` payload from CDI |
+
+**Key principle (architect review round 4):** Say *"WebhookFanoutProcessor observes the same CDI event"*, not *"reads the outbox"*. The outbox remains solely for Debezium. Webhooks are an independent post-commit observer, complementary to the existing [`SqlEventsProcessor`](app/src/main/java/io/apicurio/registry/storage/impl/sql/SqlEventsProcessor.java) documented in [`assembly-registry-events.adoc`](docs/modules/ROOT/pages/getting-started/assembly-registry-events.adoc).
 
 ### Transaction isolation policy (issue #1 — blocking approval item)
 
@@ -1594,7 +1627,7 @@ RETURNING d.*;
 
 | Component                          | Problem it solves                                       | Package                         |
 | ---------------------------------- | ------------------------------------------------------- | ------------------------------- |
-| `WebhookFanoutProcessor`           | Post-commit: snapshot payload → match → enqueue         | `io.apicurio.registry.webhooks` |
+| `WebhookFanoutProcessor`           | Observes `SqlOutboxEvent` AFTER_SUCCESS; snapshot payload → match → enqueue | `io.apicurio.registry.webhooks` |
 | `WebhookFanoutReconciler`          | Replay fanout from `webhook_fanout` PENDING/FAILED rows | same                            |
 | `RuleViolationEmitter`             | Notify on rejected writes (separate TX)                 | same                            |
 | `WebhookSubscriptionMatcher`       | Filter subscriptions                                    | same                            |
@@ -1608,7 +1641,7 @@ RETURNING d.*;
 | `SqlWebhookDeliveryRepository`     | Queue + fanout + log                                    | same                            |
 
 
-**Integration point for outbox events:** `@TransactionalEventListener(TransactionalEventType.AFTER_SUCCESS)` on `SqlOutboxEvent`. **Not** inside `SqlEventRepository.createEvent()` — artifact TX must remain webhook-free.
+**Integration point:** `@TransactionalEventListener(TransactionalEventType.AFTER_SUCCESS)` on the same CDI `SqlOutboxEvent` that [`SqlEventsProcessor`](app/src/main/java/io/apicurio/registry/storage/impl/sql/SqlEventsProcessor.java) observes for Debezium. **Not** a reader of the `outbox` table; **not** inside `SqlEventRepository.createEvent()` — artifact TX must remain webhook-free.
 
 ---
 
@@ -1686,6 +1719,29 @@ Both blocking items substantively fixed. Benchmark gates attached (not asserted)
 
 ---
 
+## 2.11 Architect Review — Round 4 Resolutions (CDI observer wording)
+
+**Reviewer's concern:** Implementation wording should say `WebhookFanoutProcessor` **observes the same CDI event**, not **reads the outbox**. The outbox remains solely for Debezium; webhooks are an independent observer.
+
+**Verdict: Agree — wording correction only; architecture unchanged.**
+
+| Aspect | Before (misleading) | After (correct) |
+| ------ | --------------------- | --------------- |
+| Integration model | Implied fanout reads `outbox` table or is downstream of `SqlEventRepository` | `WebhookFanoutProcessor` observes same `SqlOutboxEvent` as `SqlEventsProcessor`, at `AFTER_SUCCESS` |
+| Diagram | `GroupsAPI --> Outbox` | CDI bus → `SqlEventsProcessor` → outbox (Debezium); CDI → `WebhookFanoutProcessor` (webhooks) |
+| Component map | "Integration point for outbox events" | "Observes same CDI `SqlOutboxEvent`" |
+
+**Rationale (codebase evidence):**
+
+1. Repositories fire `Event<SqlOutboxEvent>.fire(...)` — e.g. [`SqlVersionRepository`](app/src/main/java/io/apicurio/registry/storage/impl/sql/repositories/SqlVersionRepository.java).
+2. [`SqlEventsProcessor`](app/src/main/java/io/apicurio/registry/storage/impl/sql/SqlEventsProcessor.java) uses `@Observes SqlOutboxEvent` → writes ephemeral outbox rows for Debezium.
+3. `WebhookFanoutProcessor` will use `@TransactionalEventListener(AFTER_SUCCESS)` on the **same** event type — payload comes from in-memory `OutboxEvent`, never from querying `outbox`.
+4. Aligns with maintainer docs: [`assembly-registry-events.adoc`](docs/modules/ROOT/pages/getting-started/assembly-registry-events.adoc) describes outbox as the Debezium CDC path.
+
+**What did NOT change:** Tables, fanout TX, delivery queue, reconciler source (`webhook_fanout.sourcePayload`), or `SqlEventRepository` (unchanged).
+
+---
+
 # Deliverable 3 — Implementation Plan
 
 ## 3.0 Project Traceability Matrix
@@ -1698,7 +1754,7 @@ Maps the 9 implementation subtasks to this design doc. Status as of plan review.
 | 1   | CloudEvents schema + event types           | §2.2, §2.4.1, Subtask 1 detail below | **Covered** | All 7 v1 event types; mapper-only extension, architecture unchanged     |
 | 2   | SQL schema (subscriptions + delivery logs) | §2.6                                 | **Covered** | Adds `webhook_fanout` beyond subtask spec (required for replay)         |
 | 3   | Subscription management API                | §2.3                                 | **Covered** | `/admin/webhooks/`*, OpenAPI, pagination, RBAC                          |
-| 4   | Event emission from SQL storage            | §2.4, §2.8, §2.1.1                   | **Covered** | Post-commit fanout; non-blocking                                        |
+| 4   | Event emission from SQL storage            | §2.4 Dual-observer, §2.8, §2.1.1     | **Covered** | Observes same CDI `SqlOutboxEvent` AFTER_SUCCESS; does not read `outbox` table |
 | 5   | Delivery engine + retry                    | §2.4                                 | **Covered** | Retry 1s/5m/10, graceful shutdown, 15s HTTP timeout                     |
 | 6   | Monitoring + management                    | §3.1 Phase 6                         | **Covered** | Replay, auto-disable, metrics, purge                                    |
 | 7   | Integration tests                          | §3.2                                 | **Covered** | All 7 event types + filter, ordering, retry, concurrency                |
@@ -1826,7 +1882,7 @@ On Quarkus shutdown (`@PreDestroy` / `ShutdownEvent`):
 
 - Add CloudEvents dependencies
 - `CloudEventsMapper` with all 7 event types (maps existing `StorageEventType` outbox payloads; no storage-layer changes)
-- `WebhookFanoutProcessor` (`AFTER_SUCCESS` listener on `SqlOutboxEvent`)
+- `WebhookFanoutProcessor` — observes `SqlOutboxEvent` via `@TransactionalEventListener(AFTER_SUCCESS)`; async executor handoff (§2.4.2)
 - Persist `sourcePayload` to `webhook_fanout` as first fanout action
 - `WebhookFanoutReconciler` (replay from `webhook_fanout`, not `outbox`)
 - `WebhookSubscriptionMatcher`
@@ -1979,7 +2035,7 @@ class WebhookDeliveryIT {
 - `[openapi.json](common/src/main/resources/META-INF/openapi.json)`
 - `[RegistryStorage.java](app/src/main/java/io/apicurio/registry/storage/RegistryStorage.java)`
 - `[AbstractSqlRegistryStorage.java](app/src/main/java/io/apicurio/registry/storage/impl/sql/AbstractSqlRegistryStorage.java)`
-- `[SqlEventRepository.java](app/src/main/java/io/apicurio/registry/storage/impl/sql/repositories/SqlEventRepository.java)` — unchanged; fanout listens via CDI, does not modify this class
+- `[SqlEventRepository.java](app/src/main/java/io/apicurio/registry/storage/impl/sql/repositories/SqlEventRepository.java)` — unchanged; `WebhookFanoutProcessor` observes `SqlOutboxEvent` via CDI, does not modify this class
 - `[SqlStatements.java](app/src/main/java/io/apicurio/registry/storage/impl/sql/SqlStatements.java)` + `[CommonSqlStatements.java](app/src/main/java/io/apicurio/registry/storage/impl/sql/CommonSqlStatements.java)`
 - All 4 base `.ddl` + `[db-version](app/src/main/resources/io/apicurio/registry/storage/impl/sql/db-version)`
 - `[RulesServiceImpl.java](app/src/main/java/io/apicurio/registry/rules/RulesServiceImpl.java)`
@@ -2019,12 +2075,12 @@ apicurio.webhooks.violations.max-count=20
 
 ## 3.6 Relationship to Existing Outbox
 
-The webhook system is **complementary** to the Debezium/Kafka path documented in `[assembly-registry-events.adoc](docs/modules/ROOT/pages/getting-started/assembly-registry-events.adoc)`:
+The webhook system is **complementary** to the Debezium/Kafka path documented in [`assembly-registry-events.adoc`](docs/modules/ROOT/pages/getting-started/assembly-registry-events.adoc):
 
-- Platform teams with Kafka keep using CDC
+- Platform teams with Kafka keep using CDC via `SqlEventsProcessor` → ephemeral `outbox` rows
 - Application teams register HTTPS endpoints without new infrastructure
-- Both fan out from the same internal storage events
-- No changes to existing `outbox` table or `StorageEventType` enum required for v1
+- **Both paths observe the same CDI `SqlOutboxEvent`** fired by storage repositories — webhooks never query the `outbox` table
+- No changes to existing `outbox` table, `SqlEventsProcessor`, or `StorageEventType` enum required for v1
 
 ---
 
