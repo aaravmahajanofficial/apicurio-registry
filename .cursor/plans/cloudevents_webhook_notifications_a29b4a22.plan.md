@@ -236,7 +236,7 @@ See **§0 Baseline Context** for the full explanation of the outbox pattern, cod
 ```mermaid
 flowchart TB
     subgraph clients [Clients]
-        AdminUI[Admin / CI]
+        AdminUI["Admin / CI"]
         Producer[Producer CI]
         Subscriber[Webhook Subscriber]
     end
@@ -248,7 +248,7 @@ flowchart TB
         end
         subgraph core [Core]
             RulesSvc[RulesServiceImpl]
-            CDI[CDI SqlOutboxEvent]
+            CdiBus[CDI SqlOutboxEvent]
             SqlEventsProc[SqlEventsProcessor]
             FanoutProc[WebhookFanoutProcessor]
             FanoutRecon[WebhookFanoutReconciler]
@@ -263,9 +263,9 @@ flowchart TB
     end
 
     subgraph pg [PostgreSQL]
-        Artifacts[(artifacts / versions)]
+        Artifacts[("artifacts / versions")]
         Outbox[(outbox)]
-        Fanout[(webhook_fanout)]
+        WebhookFanoutTbl[(webhook_fanout)]
         Subs[(webhook_subscriptions)]
         Queue[(webhook_deliveries)]
         Log[(webhook_delivery_log)]
@@ -277,14 +277,14 @@ flowchart TB
     GroupsAPI --> RulesSvc
     RulesSvc -->|on violation| RuleEmitter
     GroupsAPI --> Artifacts
-    GroupsAPI -->|storage write| CDI
-    CDI -->|@Observes sync| SqlEventsProc
-    SqlEventsProc -->|INSERT+DELETE Debezium CDC| Outbox
-    CDI -->|"@TransactionalEventListener AFTER_SUCCESS"| FanoutProc
-    FanoutProc -->|"new TX"| Fanout
+    GroupsAPI -->|storage write| CdiBus
+    CdiBus -->|observes sync| SqlEventsProc
+    SqlEventsProc -->|ephemeral outbox CDC| Outbox
+    CdiBus -->|after success| FanoutProc
+    FanoutProc -->|fanout TX| WebhookFanoutTbl
     FanoutProc --> Queue
-    FanoutRecon -->|"replays missed fanout"| Queue
-    RuleEmitter -->|"separate TX"| Queue
+    FanoutRecon -->|replay missed fanout| Queue
+    RuleEmitter -->|separate TX| Queue
     Worker -->|SKIP LOCKED poll| Queue
     Reclaimer -->|SKIP LOCKED reclaim| Queue
     Worker --> Signer
@@ -1023,12 +1023,12 @@ Storage repositories fire `SqlOutboxEvent` via CDI (`Event<SqlOutboxEvent>.fire(
 
 ```mermaid
 flowchart LR
-    Storage[SqlVersionRepository etc.] -->|fire| CDI[SqlOutboxEvent]
-    CDI -->|@Observes sync| SqlEventsProc[SqlEventsProcessor]
-    CDI -->|"@TransactionalEventListener AFTER_SUCCESS"| FanoutProc[WebhookFanoutProcessor]
-    SqlEventsProc -->|INSERT+DELETE| Outbox[(outbox table)]
+    Storage[SqlVersionRepository etc.] -->|fire| CdiBus[SqlOutboxEvent]
+    CdiBus -->|observes sync| SqlEventsProc[SqlEventsProcessor]
+    CdiBus -->|after success| FanoutProc[WebhookFanoutProcessor]
+    SqlEventsProc -->|ephemeral outbox| Outbox[(outbox table)]
     Outbox -->|CDC| Debezium[Debezium to Kafka]
-    FanoutProc -->|persist + enqueue| WebhookTables[(webhook_fanout / webhook_deliveries)]
+    FanoutProc -->|persist and enqueue| WebhookTables[("webhook_fanout / webhook_deliveries")]
 ```
 
 | Observer | Mechanism | Purpose | Reads `outbox` table? |
