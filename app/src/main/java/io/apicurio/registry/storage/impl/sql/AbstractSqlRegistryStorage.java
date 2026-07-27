@@ -81,7 +81,7 @@ import static io.apicurio.registry.utils.StringUtil.limitStr;
 public abstract class AbstractSqlRegistryStorage implements RegistryStorage {
 
     private static final int DB_VERSION = Integer
-            .parseInt(IoUtil.toString(AbstractSqlRegistryStorage.class.getResourceAsStream("db-version")));
+            .parseInt(IoUtil.toString(AbstractSqlRegistryStorage.class.getResourceAsStream("db-version")).trim());
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -168,6 +168,8 @@ public abstract class AbstractSqlRegistryStorage implements RegistryStorage {
     SqlCleanupRepository cleanupRepository;
     SqlContractRuleRepository contractRuleRepository;
     SqlContractAuditRepository contractAuditRepository;
+    SqlWebhookSubscriptionRepository webhookSubscriptionRepository;
+    SqlWebhookDeliveryRepository webhookDeliveryRepository;
     SqlUsageRepository usageRepository;
 
     private volatile boolean isReady = false;
@@ -299,6 +301,8 @@ public abstract class AbstractSqlRegistryStorage implements RegistryStorage {
         contractRuleRepository = new SqlContractRuleRepository(handleFactory, sqlStatements, log,
                 versionRepository);
         contractAuditRepository = new SqlContractAuditRepository(handleFactory, sqlStatements, log);
+        webhookSubscriptionRepository = new SqlWebhookSubscriptionRepository(handleFactory, sqlStatements, log);
+        webhookDeliveryRepository = new SqlWebhookDeliveryRepository(handleFactory, sqlStatements, log);
 
         // Level 5: depend on level 4
         commentRepository = new SqlCommentRepository(handleFactory, sqlStatements, log,
@@ -1747,6 +1751,105 @@ public abstract class AbstractSqlRegistryStorage implements RegistryStorage {
     }
 
     @Override
+    public boolean supportsWebhooks() {
+        return isPostgresql();
+    }
+
+    @Override
+    public void createWebhookSubscription(WebhookSubscriptionDto subscription) throws RegistryStorageException {
+        webhookSubscriptionRepository.createSubscription(subscription);
+    }
+
+    @Override
+    public WebhookSubscriptionDto getWebhookSubscription(String subscriptionId) throws RegistryStorageException {
+        return webhookSubscriptionRepository.getSubscription(subscriptionId);
+    }
+
+    @Override
+    public void updateWebhookSubscription(WebhookSubscriptionDto subscription) throws RegistryStorageException {
+        webhookSubscriptionRepository.updateSubscription(subscription);
+    }
+
+    @Override
+    public void deleteWebhookSubscription(String subscriptionId) throws RegistryStorageException {
+        webhookSubscriptionRepository.deleteSubscription(subscriptionId);
+    }
+
+    @Override
+    public List<WebhookSubscriptionDto> listWebhookSubscriptions(int offset, int limit)
+            throws RegistryStorageException {
+        return webhookSubscriptionRepository.listSubscriptions(offset, limit);
+    }
+
+    @Override
+    public long countWebhookSubscriptions() throws RegistryStorageException {
+        return webhookSubscriptionRepository.countSubscriptions();
+    }
+
+    @Override
+    public List<WebhookSubscriptionDto> getEnabledWebhookSubscriptions() throws RegistryStorageException {
+        return webhookSubscriptionRepository.getEnabledSubscriptions();
+    }
+
+    @Override
+    public void insertWebhookFanout(WebhookFanoutDto fanout) throws RegistryStorageException {
+        webhookDeliveryRepository.insertFanout(fanout);
+    }
+
+    @Override
+    public void updateWebhookFanoutStatus(WebhookFanoutDto fanout) throws RegistryStorageException {
+        webhookDeliveryRepository.updateFanoutStatus(fanout);
+    }
+
+    @Override
+    public List<WebhookFanoutDto> getPendingWebhookFanouts(int maxAttempts, int limit)
+            throws RegistryStorageException {
+        return webhookDeliveryRepository.getPendingFanouts(maxAttempts, limit);
+    }
+
+    @Override
+    public long insertWebhookDelivery(WebhookDeliveryDto delivery) throws RegistryStorageException {
+        return webhookDeliveryRepository.insertDelivery(delivery);
+    }
+
+    @Override
+    public List<WebhookDeliveryDto> claimWebhookDeliveries(int batchSize) throws RegistryStorageException {
+        return webhookDeliveryRepository.claimDeliveries(batchSize);
+    }
+
+    @Override
+    public void updateWebhookDelivery(WebhookDeliveryDto delivery) throws RegistryStorageException {
+        webhookDeliveryRepository.updateDelivery(delivery);
+    }
+
+    @Override
+    public List<WebhookDeliveryDto> getWebhookDeliveries(String subscriptionId, int offset, int limit)
+            throws RegistryStorageException {
+        return webhookDeliveryRepository.getDeliveriesBySubscription(subscriptionId, offset, limit);
+    }
+
+    @Override
+    public long countWebhookDeliveries(String subscriptionId) throws RegistryStorageException {
+        return webhookDeliveryRepository.countDeliveriesBySubscription(subscriptionId);
+    }
+
+    @Override
+    public void insertWebhookDeliveryLog(WebhookDeliveryLogDto logEntry) throws RegistryStorageException {
+        webhookDeliveryRepository.insertDeliveryLog(logEntry);
+    }
+
+    @Override
+    public List<WebhookDeliveryLogDto> getWebhookDeliveryLog(String subscriptionId, int offset, int limit)
+            throws RegistryStorageException {
+        return webhookDeliveryRepository.getDeliveryLogBySubscription(subscriptionId, offset, limit);
+    }
+
+    @Override
+    public void deleteOldWebhookDeliveryLogs(long cutoffTimestamp) throws RegistryStorageException {
+        webhookDeliveryRepository.deleteOldDeliveryLogs(cutoffTimestamp);
+    }
+
+    @Override
     public void deleteOldUsageEvents(long cutoffTimestamp) {
         usageRepository.deleteOldUsageEvents(cutoffTimestamp);
     }
@@ -1779,5 +1882,9 @@ public abstract class AbstractSqlRegistryStorage implements RegistryStorage {
 
     private boolean isH2() {
         return sqlStatements.dbType().equals("h2");
+    }
+
+    private boolean isPostgresql() {
+        return sqlStatements.dbType().equals("postgresql");
     }
 }

@@ -36,8 +36,12 @@ import io.apicurio.registry.storage.dto.DeprecationReadinessDto;
 import io.apicurio.registry.storage.dto.SchemaUsageEventDto;
 import io.apicurio.registry.storage.dto.SchemaUsageSummaryDto;
 import io.apicurio.registry.storage.dto.SearchFilter;
-import io.apicurio.registry.storage.dto.UsageSummaryCountsDto;
 import io.apicurio.registry.storage.dto.StoredArtifactVersionDto;
+import io.apicurio.registry.storage.dto.UsageSummaryCountsDto;
+import io.apicurio.registry.storage.dto.WebhookDeliveryDto;
+import io.apicurio.registry.storage.dto.WebhookDeliveryLogDto;
+import io.apicurio.registry.storage.dto.WebhookFanoutDto;
+import io.apicurio.registry.storage.dto.WebhookSubscriptionDto;
 import io.apicurio.registry.storage.dto.VersionContentDto;
 import io.apicurio.registry.storage.dto.VersionSearchResultsDto;
 import io.apicurio.registry.storage.error.ArtifactAlreadyExistsException;
@@ -1213,6 +1217,92 @@ public interface RegistryStorage extends DynamicConfigStorage {
      * @throws RegistryStorageException
      */
     boolean supportsDatabaseEvents();
+
+    /**
+     * true if the underlying storage supports CloudEvents webhook notifications (PostgreSQL only).
+     */
+    default boolean supportsWebhooks() {
+        return false;
+    }
+
+    default void createWebhookSubscription(WebhookSubscriptionDto subscription)
+            throws RegistryStorageException {
+        throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
+    }
+
+    default WebhookSubscriptionDto getWebhookSubscription(String subscriptionId)
+            throws RegistryStorageException {
+        throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
+    }
+
+    default void updateWebhookSubscription(WebhookSubscriptionDto subscription)
+            throws RegistryStorageException {
+        throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
+    }
+
+    default void deleteWebhookSubscription(String subscriptionId) throws RegistryStorageException {
+        throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
+    }
+
+    default List<WebhookSubscriptionDto> listWebhookSubscriptions(int offset, int limit)
+            throws RegistryStorageException {
+        throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
+    }
+
+    default long countWebhookSubscriptions() throws RegistryStorageException {
+        throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
+    }
+
+    default List<WebhookSubscriptionDto> getEnabledWebhookSubscriptions() throws RegistryStorageException {
+        throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
+    }
+
+    default void insertWebhookFanout(WebhookFanoutDto fanout) throws RegistryStorageException {
+        throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
+    }
+
+    default void updateWebhookFanoutStatus(WebhookFanoutDto fanout) throws RegistryStorageException {
+        throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
+    }
+
+    default List<WebhookFanoutDto> getPendingWebhookFanouts(int maxAttempts, int limit)
+            throws RegistryStorageException {
+        throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
+    }
+
+    default long insertWebhookDelivery(WebhookDeliveryDto delivery) throws RegistryStorageException {
+        throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
+    }
+
+    default List<WebhookDeliveryDto> claimWebhookDeliveries(int batchSize) throws RegistryStorageException {
+        throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
+    }
+
+    default void updateWebhookDelivery(WebhookDeliveryDto delivery) throws RegistryStorageException {
+        throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
+    }
+
+    default List<WebhookDeliveryDto> getWebhookDeliveries(String subscriptionId, int offset, int limit)
+            throws RegistryStorageException {
+        throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
+    }
+
+    default long countWebhookDeliveries(String subscriptionId) throws RegistryStorageException {
+        throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
+    }
+
+    default void insertWebhookDeliveryLog(WebhookDeliveryLogDto log) throws RegistryStorageException {
+        throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
+    }
+
+    default List<WebhookDeliveryLogDto> getWebhookDeliveryLog(String subscriptionId, int offset, int limit)
+            throws RegistryStorageException {
+        throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
+    }
+
+    default void deleteOldWebhookDeliveryLogs(long cutoffTimestamp) throws RegistryStorageException {
+        throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
+    }
 
     /**
      * Records a single schema usage event.

@@ -100,4 +100,62 @@ public class PostgreSQLSqlStatements extends CommonSqlStatements {
         return "SELECT CASE WHEN pg_advisory_unlock(1886352239) THEN 1 ELSE 0 END";
     }
 
+    @Override
+    public String insertWebhookSubscription() {
+        return """
+                INSERT INTO webhook_subscriptions
+                (subscriptionId, url, eventTypes, groupIdFilter, artifactTypeFilter, secretHash,
+                 enabled, description, createdBy, createdOn, modifiedOn)
+                VALUES (?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?)
+                """;
+    }
+
+    @Override
+    public String updateWebhookSubscription() {
+        return """
+                UPDATE webhook_subscriptions
+                SET url = ?, eventTypes = ?::jsonb, groupIdFilter = ?, artifactTypeFilter = ?,
+                    secretHash = ?, enabled = ?, description = ?, modifiedOn = ?
+                WHERE subscriptionId = ?
+                """;
+    }
+
+    @Override
+    public String insertWebhookFanout() {
+        return """
+                INSERT INTO webhook_fanout
+                (outboxEventId, sourcePayload, storageEventType, fanoutStatus, fanoutAttempts,
+                 lastError, createdOn, fanoutOn)
+                VALUES (?, ?::jsonb, ?, ?, ?, ?, ?, ?)
+                """;
+    }
+
+    @Override
+    public String insertWebhookDelivery() {
+        return """
+                INSERT INTO webhook_deliveries
+                (subscriptionId, cloudEventId, eventType, payload, status, attemptCount,
+                 nextAttemptOn, lastError, createdOn, modifiedOn)
+                VALUES (?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?)
+                """;
+    }
+
+    @Override
+    public String claimWebhookDeliveries() {
+        return """
+                UPDATE webhook_deliveries d
+                SET status = 'IN_PROGRESS', modifiedOn = CURRENT_TIMESTAMP
+                FROM (
+                    SELECT deliveryId
+                    FROM webhook_deliveries
+                    WHERE status = 'PENDING' AND nextAttemptOn <= CURRENT_TIMESTAMP
+                    ORDER BY nextAttemptOn
+                    LIMIT ?
+                    FOR UPDATE SKIP LOCKED
+                ) batch
+                WHERE d.deliveryId = batch.deliveryId
+                RETURNING d.*
+                """;
+    }
+
 }

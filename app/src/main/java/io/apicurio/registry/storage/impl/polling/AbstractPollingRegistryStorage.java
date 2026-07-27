@@ -491,6 +491,116 @@ public abstract class AbstractPollingRegistryStorage<MARKER extends SourceMarker
     }
 
     @Override
+    public boolean supportsWebhooks() {
+        return proxy(RegistryStorage::supportsWebhooks);
+    }
+
+    @Override
+    public void createWebhookSubscription(io.apicurio.registry.storage.dto.WebhookSubscriptionDto subscription) {
+        throw new io.apicurio.registry.storage.error.RegistryStorageException(
+                "Webhook writes are not supported in read-only storage");
+    }
+
+    @Override
+    public io.apicurio.registry.storage.dto.WebhookSubscriptionDto getWebhookSubscription(
+            String subscriptionId) {
+        return proxy(storage -> storage.getWebhookSubscription(subscriptionId));
+    }
+
+    @Override
+    public void updateWebhookSubscription(io.apicurio.registry.storage.dto.WebhookSubscriptionDto subscription) {
+        throw new io.apicurio.registry.storage.error.RegistryStorageException(
+                "Webhook writes are not supported in read-only storage");
+    }
+
+    @Override
+    public void deleteWebhookSubscription(String subscriptionId) {
+        throw new io.apicurio.registry.storage.error.RegistryStorageException(
+                "Webhook writes are not supported in read-only storage");
+    }
+
+    @Override
+    public java.util.List<io.apicurio.registry.storage.dto.WebhookSubscriptionDto> listWebhookSubscriptions(
+            int offset, int limit) {
+        return proxy(storage -> storage.listWebhookSubscriptions(offset, limit));
+    }
+
+    @Override
+    public long countWebhookSubscriptions() {
+        return proxy(RegistryStorage::countWebhookSubscriptions);
+    }
+
+    @Override
+    public java.util.List<io.apicurio.registry.storage.dto.WebhookSubscriptionDto> getEnabledWebhookSubscriptions() {
+        return proxy(RegistryStorage::getEnabledWebhookSubscriptions);
+    }
+
+    @Override
+    public void insertWebhookFanout(io.apicurio.registry.storage.dto.WebhookFanoutDto fanout) {
+        throw new io.apicurio.registry.storage.error.RegistryStorageException(
+                "Webhook writes are not supported in read-only storage");
+    }
+
+    @Override
+    public void updateWebhookFanoutStatus(io.apicurio.registry.storage.dto.WebhookFanoutDto fanout) {
+        throw new io.apicurio.registry.storage.error.RegistryStorageException(
+                "Webhook writes are not supported in read-only storage");
+    }
+
+    @Override
+    public java.util.List<io.apicurio.registry.storage.dto.WebhookFanoutDto> getPendingWebhookFanouts(
+            int maxAttempts, int limit) {
+        return proxy(storage -> storage.getPendingWebhookFanouts(maxAttempts, limit));
+    }
+
+    @Override
+    public long insertWebhookDelivery(io.apicurio.registry.storage.dto.WebhookDeliveryDto delivery) {
+        throw new io.apicurio.registry.storage.error.RegistryStorageException(
+                "Webhook writes are not supported in read-only storage");
+    }
+
+    @Override
+    public java.util.List<io.apicurio.registry.storage.dto.WebhookDeliveryDto> claimWebhookDeliveries(
+            int batchSize) {
+        return proxy(storage -> storage.claimWebhookDeliveries(batchSize));
+    }
+
+    @Override
+    public void updateWebhookDelivery(io.apicurio.registry.storage.dto.WebhookDeliveryDto delivery) {
+        throw new io.apicurio.registry.storage.error.RegistryStorageException(
+                "Webhook writes are not supported in read-only storage");
+    }
+
+    @Override
+    public java.util.List<io.apicurio.registry.storage.dto.WebhookDeliveryDto> getWebhookDeliveries(
+            String subscriptionId, int offset, int limit) {
+        return proxy(storage -> storage.getWebhookDeliveries(subscriptionId, offset, limit));
+    }
+
+    @Override
+    public long countWebhookDeliveries(String subscriptionId) {
+        return proxy(storage -> storage.countWebhookDeliveries(subscriptionId));
+    }
+
+    @Override
+    public void insertWebhookDeliveryLog(io.apicurio.registry.storage.dto.WebhookDeliveryLogDto log) {
+        throw new io.apicurio.registry.storage.error.RegistryStorageException(
+                "Webhook writes are not supported in read-only storage");
+    }
+
+    @Override
+    public java.util.List<io.apicurio.registry.storage.dto.WebhookDeliveryLogDto> getWebhookDeliveryLog(
+            String subscriptionId, int offset, int limit) {
+        return proxy(storage -> storage.getWebhookDeliveryLog(subscriptionId, offset, limit));
+    }
+
+    @Override
+    public void deleteOldWebhookDeliveryLogs(long cutoffTimestamp) {
+        throw new io.apicurio.registry.storage.error.RegistryStorageException(
+                "Webhook writes are not supported in read-only storage");
+    }
+
+    @Override
     public List<String> getArtifactVersions(String groupId, String artifactId) {
         return proxy(storage -> storage.getArtifactVersions(groupId, artifactId));
     }

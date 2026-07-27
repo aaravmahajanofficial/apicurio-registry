@@ -850,4 +850,40 @@ public interface SqlStatements {
     String selectContractAuditLogCount();
 
     String deleteAllContractAuditEntries();
+
+    String insertWebhookSubscription();
+
+    String updateWebhookSubscription();
+
+    String deleteWebhookSubscription();
+
+    String selectWebhookSubscriptionById();
+
+    String selectWebhookSubscriptions();
+
+    String selectEnabledWebhookSubscriptions();
+
+    String countWebhookSubscriptions();
+
+    String insertWebhookFanout();
+
+    String updateWebhookFanoutStatus();
+
+    String selectPendingWebhookFanouts();
+
+    String insertWebhookDelivery();
+
+    String claimWebhookDeliveries();
+
+    String updateWebhookDelivery();
+
+    String selectWebhookDeliveriesBySubscription();
+
+    String countWebhookDeliveriesBySubscription();
+
+    String insertWebhookDeliveryLog();
+
+    String selectWebhookDeliveryLogBySubscription();
+
+    String deleteOldWebhookDeliveryLogs();
 }

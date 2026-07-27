@@ -1009,6 +1009,111 @@ The following {registry} configuration options are available for each component 
 |`512`
 |`3.0.3`
 |Max size of the labels (in bytes) per item from within search results
+|`apicurio.webhooks.allow-insecure-urls`
+|`boolean`
+|`false`
+|`3.3.0`
+|Allow http:// webhook endpoint URLs (development only) _(experimental)_
+|`apicurio.webhooks.delivery.auto-disable-threshold`
+|`int`
+|`50`
+|`3.3.0`
+|Consecutive delivery failures before auto-disabling a subscription _(experimental)_
+|`apicurio.webhooks.delivery.backoff-multiplier`
+|`double`
+|`2.0`
+|`3.3.0`
+|Exponential backoff multiplier for webhook delivery retries _(experimental)_
+|`apicurio.webhooks.delivery.batch-size`
+|`int`
+|`50`
+|`3.3.0`
+|Number of webhook deliveries claimed per worker poll _(experimental)_
+|`apicurio.webhooks.delivery.concurrency`
+|`int`
+|`10`
+|`3.3.0`
+|Maximum concurrent webhook HTTP deliveries per registry instance _(experimental)_
+|`apicurio.webhooks.delivery.http-timeout`
+|`string`
+|`15s`
+|`3.3.0`
+|HTTP timeout for webhook delivery requests _(experimental)_
+|`apicurio.webhooks.delivery.in-progress-timeout`
+|`string`
+|`5m`
+|`3.3.0`
+|Duration after which in-progress webhook deliveries are reclaimed _(experimental)_
+|`apicurio.webhooks.delivery.initial-delay`
+|`string`
+|`1s`
+|`3.3.0`
+|Initial retry delay for failed webhook deliveries _(experimental)_
+|`apicurio.webhooks.delivery.max-attempts`
+|`int`
+|`10`
+|`3.3.0`
+|Maximum delivery attempts before moving a webhook delivery to dead-letter status _(experimental)_
+|`apicurio.webhooks.delivery.max-delay`
+|`string`
+|`5m`
+|`3.3.0`
+|Maximum retry delay for failed webhook deliveries _(experimental)_
+|`apicurio.webhooks.delivery.max-inflight-per-subscription`
+|`int`
+|`3`
+|`3.3.0`
+|Maximum in-flight webhook deliveries per subscription _(experimental)_
+|`apicurio.webhooks.delivery.poll-every`
+|`string`
+|`2s`
+|`3.3.0`
+|How often the webhook delivery worker polls for pending deliveries _(experimental)_
+|`apicurio.webhooks.delivery.shutdown-timeout`
+|`string`
+|`30s`
+|`3.3.0`
+|Grace period to drain in-flight webhook deliveries on shutdown _(experimental)_
+|`apicurio.webhooks.enabled`
+|`boolean`
+|`false`
+|`3.3.0`
+|Enable CloudEvents webhook notifications _(experimental)_
+|`apicurio.webhooks.fanout.reconcile-every`
+|`string`
+|`30s`
+|`3.3.0`
+|How often the webhook fanout reconciler polls for pending fanouts _(experimental)_
+|`apicurio.webhooks.log.retention`
+|`string`
+|`30d`
+|`3.3.0`
+|Retention period for webhook delivery audit logs _(experimental)_
+|`apicurio.webhooks.payload.max-bytes`
+|`int`
+|`262144`
+|`3.3.0`
+|Maximum CloudEvent payload size in bytes before truncation _(experimental)_
+|`apicurio.webhooks.rule-violations.enabled`
+|`boolean`
+|`true`
+|`3.3.0`
+|Emit rule.violated CloudEvents when artifact writes are rejected by rules _(experimental)_
+|`apicurio.webhooks.security.block-private-ips`
+|`boolean`
+|`true`
+|`3.3.0`
+|Block webhook URLs that resolve to private or link-local IP addresses _(experimental)_
+|`apicurio.webhooks.subscriptions.max-count`
+|`int`
+|`100`
+|`3.3.0`
+|Maximum number of webhook subscriptions per registry instance _(experimental)_
+|`apicurio.webhooks.violations.max-count`
+|`int`
+|`20`
+|`3.3.0`
+|Maximum rule violations included in a rule.violated CloudEvent _(experimental)_
 |===
 
 == search
