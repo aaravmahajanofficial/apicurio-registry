@@ -24,6 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Storage-layer integration tests for webhook tables (migration 108) on PostgreSQL.
+ */
 @QuarkusTest
 @Tag(ApicurioTestTags.SLOW)
 @TestProfile(PostgresqlTestProfile.class)
@@ -33,6 +36,7 @@ public class WebhookRepositoryPostgreSqlTest {
     @Current
     RegistryStorage storage;
 
+    /** Verifies subscription CRUD and enabled-filter listing via {@link RegistryStorage}. */
     @Test
     public void testWebhookSubscriptionCrud() {
         assertTrue(storage.supportsWebhooks());
@@ -75,6 +79,7 @@ public class WebhookRepositoryPostgreSqlTest {
                 () -> storage.getWebhookSubscription(subscriptionId));
     }
 
+    /** Verifies fanout, delivery enqueue, delivery log, and cascade delete on subscription removal. */
     @Test
     public void testWebhookFanoutDeliveryAndLog() {
         String subscriptionId = UUID.randomUUID().toString();

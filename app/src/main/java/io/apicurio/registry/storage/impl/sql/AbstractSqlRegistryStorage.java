@@ -1750,100 +1750,125 @@ public abstract class AbstractSqlRegistryStorage implements RegistryStorage {
         return eventRepository.supportsDatabaseEvents();
     }
 
+    // ========== Webhook notifications (CloudEvents) ==========
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns {@code true} only when the SQL dialect is PostgreSQL.
+     */
     @Override
     public boolean supportsWebhooks() {
         return isPostgresql();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void createWebhookSubscription(WebhookSubscriptionDto subscription) throws RegistryStorageException {
         webhookSubscriptionRepository.createSubscription(subscription);
     }
 
+    /** {@inheritDoc} */
     @Override
     public WebhookSubscriptionDto getWebhookSubscription(String subscriptionId) throws RegistryStorageException {
         return webhookSubscriptionRepository.getSubscription(subscriptionId);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void updateWebhookSubscription(WebhookSubscriptionDto subscription) throws RegistryStorageException {
         webhookSubscriptionRepository.updateSubscription(subscription);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void deleteWebhookSubscription(String subscriptionId) throws RegistryStorageException {
         webhookSubscriptionRepository.deleteSubscription(subscriptionId);
     }
 
+    /** {@inheritDoc} */
     @Override
     public List<WebhookSubscriptionDto> listWebhookSubscriptions(int offset, int limit)
             throws RegistryStorageException {
         return webhookSubscriptionRepository.listSubscriptions(offset, limit);
     }
 
+    /** {@inheritDoc} */
     @Override
     public long countWebhookSubscriptions() throws RegistryStorageException {
         return webhookSubscriptionRepository.countSubscriptions();
     }
 
+    /** {@inheritDoc} */
     @Override
     public List<WebhookSubscriptionDto> getEnabledWebhookSubscriptions() throws RegistryStorageException {
         return webhookSubscriptionRepository.getEnabledSubscriptions();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void insertWebhookFanout(WebhookFanoutDto fanout) throws RegistryStorageException {
         webhookDeliveryRepository.insertFanout(fanout);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void updateWebhookFanoutStatus(WebhookFanoutDto fanout) throws RegistryStorageException {
         webhookDeliveryRepository.updateFanoutStatus(fanout);
     }
 
+    /** {@inheritDoc} */
     @Override
     public List<WebhookFanoutDto> getPendingWebhookFanouts(int maxAttempts, int limit)
             throws RegistryStorageException {
         return webhookDeliveryRepository.getPendingFanouts(maxAttempts, limit);
     }
 
+    /** {@inheritDoc} */
     @Override
     public long insertWebhookDelivery(WebhookDeliveryDto delivery) throws RegistryStorageException {
         return webhookDeliveryRepository.insertDelivery(delivery);
     }
 
+    /** {@inheritDoc} */
     @Override
     public List<WebhookDeliveryDto> claimWebhookDeliveries(int batchSize) throws RegistryStorageException {
         return webhookDeliveryRepository.claimDeliveries(batchSize);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void updateWebhookDelivery(WebhookDeliveryDto delivery) throws RegistryStorageException {
         webhookDeliveryRepository.updateDelivery(delivery);
     }
 
+    /** {@inheritDoc} */
     @Override
     public List<WebhookDeliveryDto> getWebhookDeliveries(String subscriptionId, int offset, int limit)
             throws RegistryStorageException {
         return webhookDeliveryRepository.getDeliveriesBySubscription(subscriptionId, offset, limit);
     }
 
+    /** {@inheritDoc} */
     @Override
     public long countWebhookDeliveries(String subscriptionId) throws RegistryStorageException {
         return webhookDeliveryRepository.countDeliveriesBySubscription(subscriptionId);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void insertWebhookDeliveryLog(WebhookDeliveryLogDto logEntry) throws RegistryStorageException {
         webhookDeliveryRepository.insertDeliveryLog(logEntry);
     }
 
+    /** {@inheritDoc} */
     @Override
     public List<WebhookDeliveryLogDto> getWebhookDeliveryLog(String subscriptionId, int offset, int limit)
             throws RegistryStorageException {
         return webhookDeliveryRepository.getDeliveryLogBySubscription(subscriptionId, offset, limit);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void deleteOldWebhookDeliveryLogs(long cutoffTimestamp) throws RegistryStorageException {
         webhookDeliveryRepository.deleteOldDeliveryLogs(cutoffTimestamp);

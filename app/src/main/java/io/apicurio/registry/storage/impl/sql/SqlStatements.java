@@ -851,39 +851,61 @@ public interface SqlStatements {
 
     String deleteAllContractAuditEntries();
 
+    // --- Webhook notifications (migration 108) ---
+
+    /** @return INSERT for {@code webhook_subscriptions} */
     String insertWebhookSubscription();
 
+    /** @return UPDATE for {@code webhook_subscriptions} */
     String updateWebhookSubscription();
 
+    /** @return DELETE for {@code webhook_subscriptions} */
     String deleteWebhookSubscription();
 
+    /** @return SELECT by {@code subscriptionId} */
     String selectWebhookSubscriptionById();
 
+    /** @return SELECT all subscriptions ordered by {@code createdOn} */
     String selectWebhookSubscriptions();
 
+    /** @return SELECT enabled subscriptions only */
     String selectEnabledWebhookSubscriptions();
 
+    /** @return COUNT of all subscriptions */
     String countWebhookSubscriptions();
 
+    /** @return INSERT for {@code webhook_fanout} */
     String insertWebhookFanout();
 
+    /** @return UPDATE fanout status columns */
     String updateWebhookFanoutStatus();
 
+    /** @return SELECT pending/failed fanouts for reconciliation */
     String selectPendingWebhookFanouts();
 
+    /** @return INSERT for {@code webhook_deliveries} */
     String insertWebhookDelivery();
 
+    /**
+     * @return UPDATE … RETURNING to claim pending deliveries (PostgreSQL {@code SKIP LOCKED} only)
+     */
     String claimWebhookDeliveries();
 
+    /** @return UPDATE delivery status and retry columns */
     String updateWebhookDelivery();
 
+    /** @return SELECT deliveries for a subscription */
     String selectWebhookDeliveriesBySubscription();
 
+    /** @return COUNT deliveries for a subscription */
     String countWebhookDeliveriesBySubscription();
 
+    /** @return INSERT for {@code webhook_delivery_log} */
     String insertWebhookDeliveryLog();
 
+    /** @return SELECT delivery log for a subscription */
     String selectWebhookDeliveryLogBySubscription();
 
+    /** @return DELETE log rows older than cutoff */
     String deleteOldWebhookDeliveryLogs();
 }

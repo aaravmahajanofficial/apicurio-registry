@@ -8,6 +8,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
+/**
+ * Maps {@code webhook_subscriptions} rows to {@link io.apicurio.registry.storage.dto.WebhookSubscriptionDto}.
+ */
 public class WebhookSubscriptionDtoMapper implements RowMapper<io.apicurio.registry.storage.dto.WebhookSubscriptionDto> {
 
     public static final WebhookSubscriptionDtoMapper instance = new WebhookSubscriptionDtoMapper();
@@ -18,6 +21,9 @@ public class WebhookSubscriptionDtoMapper implements RowMapper<io.apicurio.regis
     private WebhookSubscriptionDtoMapper() {
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public io.apicurio.registry.storage.dto.WebhookSubscriptionDto map(ResultSet rs) throws SQLException {
         io.apicurio.registry.storage.dto.WebhookSubscriptionDto dto =

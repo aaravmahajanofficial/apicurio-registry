@@ -1670,6 +1670,11 @@ public abstract class CommonSqlStatements implements SqlStatements {
                 """;
     }
 
+    /**
+     * Not supported on non-PostgreSQL dialects; use {@link PostgreSQLSqlStatements#claimWebhookDeliveries()}.
+     *
+     * @throws UnsupportedOperationException always
+     */
     @Override
     public String claimWebhookDeliveries() {
         throw new UnsupportedOperationException(

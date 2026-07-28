@@ -11,6 +11,12 @@ import lombok.ToString;
 
 import java.util.Date;
 
+/**
+ * Persistence model for a single webhook delivery attempt ({@code webhook_delivery_log} table).
+ * <p>
+ * Append-only audit record capturing HTTP status, duration, and error details for each delivery
+ * attempt. Used by the admin delivery-log API and retention purge job.
+ */
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

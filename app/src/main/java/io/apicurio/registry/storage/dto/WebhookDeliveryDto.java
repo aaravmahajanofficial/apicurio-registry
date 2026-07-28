@@ -11,6 +11,13 @@ import lombok.ToString;
 
 import java.util.Date;
 
+/**
+ * Persistence model for a queued webhook delivery ({@code webhook_deliveries} table).
+ * <p>
+ * Represents one CloudEvent envelope to be POSTed to a subscriber. Status transitions
+ * (e.g. {@code PENDING}, {@code IN_PROGRESS}, {@code DELIVERED}, {@code DEAD_LETTER}) are
+ * managed by the delivery worker in later phases.
+ */
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

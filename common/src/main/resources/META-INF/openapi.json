@@ -2914,6 +2914,302 @@
         "description": "Creates a new mapping between a user/principal and a role.\n\nThis operation can fail for the following reasons:\n\n* A server error occurred (HTTP error `500`)\n\n"
       }
     },
+    "/admin/webhooks/subscriptions": {
+      "summary": "Collection of webhook subscriptions for CloudEvents notifications.",
+      "get": {
+        "tags": [
+          "Webhooks",
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "description": "The number of subscriptions to return. Defaults to 20.",
+            "schema": {
+              "type": "integer"
+            },
+            "in": "query"
+          },
+          {
+            "name": "offset",
+            "description": "The number of subscriptions to skip before starting the result set. Defaults to 0.",
+            "schema": {
+              "type": "integer"
+            },
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookSubscriptionSearchResults"
+                }
+              }
+            },
+            "description": "A list of webhook subscriptions."
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "operationId": "listWebhookSubscriptions",
+        "summary": "List webhook subscriptions",
+        "description": "**Experimental.** Lists all webhook subscriptions configured in the registry.\n\nRequires `apicurio.webhooks.enabled=true` and PostgreSQL storage.\n\nThis operation can fail for the following reasons:\n\n* Webhooks are not enabled or storage is not supported (HTTP error `409`)\n* A server error occurred (HTTP error `500`)\n"
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWebhookSubscription"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "Webhooks",
+          "Admin"
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookSubscription"
+                }
+              }
+            },
+            "description": "The webhook subscription was created. The signing secret is returned only in this response."
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "operationId": "createWebhookSubscription",
+        "summary": "Create a webhook subscription",
+        "description": "**Experimental.** Creates a new webhook subscription for CloudEvents notifications.\n\nThe signing secret (`whsec_...`) is returned only once in the create response.\n\nThis operation can fail for the following reasons:\n\n* Invalid URL or event types (HTTP error `400`)\n* Maximum subscription count reached (HTTP error `409`)\n* Webhooks are not enabled or storage is not supported (HTTP error `409`)\n* A server error occurred (HTTP error `500`)\n"
+      }
+    },
+    "/admin/webhooks/subscriptions/{subscriptionId}": {
+      "summary": "Manage a single webhook subscription.",
+      "get": {
+        "tags": [
+          "Webhooks",
+          "Admin"
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookSubscription"
+                }
+              }
+            },
+            "description": "The webhook subscription."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "operationId": "getWebhookSubscription",
+        "summary": "Get a webhook subscription",
+        "description": "**Experimental.** Returns a webhook subscription by ID. The signing secret is never returned on get.\n"
+      },
+      "put": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWebhookSubscription"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "Webhooks",
+          "Admin"
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookSubscription"
+                }
+              }
+            },
+            "description": "The webhook subscription was updated."
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "operationId": "updateWebhookSubscription",
+        "summary": "Update a webhook subscription",
+        "description": "**Experimental.** Updates an existing webhook subscription.\n"
+      },
+      "delete": {
+        "tags": [
+          "Webhooks",
+          "Admin"
+        ],
+        "responses": {
+          "204": {
+            "description": "The webhook subscription was deleted."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "operationId": "deleteWebhookSubscription",
+        "summary": "Delete a webhook subscription",
+        "description": "**Experimental.** Deletes a webhook subscription and cancels pending deliveries.\n"
+      },
+      "parameters": [
+        {
+          "name": "subscriptionId",
+          "description": "The webhook subscription ID.",
+          "schema": {
+            "type": "string"
+          },
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
+    "/admin/webhooks/subscriptions/{subscriptionId}/deliveries": {
+      "summary": "Delivery history for a webhook subscription.",
+      "get": {
+        "tags": [
+          "Webhooks",
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "description": "The number of deliveries to return. Defaults to 20.",
+            "schema": {
+              "type": "integer"
+            },
+            "in": "query"
+          },
+          {
+            "name": "offset",
+            "description": "The number of deliveries to skip before starting the result set. Defaults to 0.",
+            "schema": {
+              "type": "integer"
+            },
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDeliverySearchResults"
+                }
+              }
+            },
+            "description": "A list of webhook deliveries for the subscription."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "operationId": "listWebhookDeliveries",
+        "summary": "List webhook deliveries",
+        "description": "**Experimental.** Returns delivery records for a webhook subscription.\n"
+      },
+      "parameters": [
+        {
+          "name": "subscriptionId",
+          "description": "The webhook subscription ID.",
+          "schema": {
+            "type": "string"
+          },
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
     "/admin/config/artifactTypes": {
       "summary": "The list of artifact types supported by this instance of Registry.",
       "get": {
@@ -7834,6 +8130,253 @@
           }
         ]
       },
+      "WebhookEventType": {
+        "description": "CloudEvents type identifiers emitted by Apicurio Registry webhooks.",
+        "enum": [
+          "io.apicurio.registry.artifact.created.v1",
+          "io.apicurio.registry.artifact.updated.v1",
+          "io.apicurio.registry.artifact.deleted.v1",
+          "io.apicurio.registry.artifact.version.published.v1",
+          "io.apicurio.registry.artifact.version.deprecated.v1",
+          "io.apicurio.registry.artifact.version.state_changed.v1",
+          "io.apicurio.registry.rule.violated.v1"
+        ],
+        "type": "string"
+      },
+      "CreateWebhookSubscription": {
+        "description": "Data sent when creating a new webhook subscription.",
+        "required": [
+          "url",
+          "eventTypes"
+        ],
+        "type": "object",
+        "properties": {
+          "url": {
+            "description": "HTTPS endpoint URL that will receive CloudEvents payloads.",
+            "type": "string"
+          },
+          "eventTypes": {
+            "description": "CloudEvents types to subscribe to (at least one required).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebhookEventType"
+            },
+            "minItems": 1
+          },
+          "groupId": {
+            "description": "If set, only events for this group are delivered.",
+            "type": "string"
+          },
+          "artifactType": {
+            "description": "If set, only events for artifacts of this type are delivered.",
+            "type": "string"
+          },
+          "description": {
+            "description": "Human-readable description of the subscription.",
+            "type": "string"
+          },
+          "enabled": {
+            "description": "Whether the subscription is active. Defaults to true.",
+            "type": "boolean"
+          }
+        }
+      },
+      "UpdateWebhookSubscription": {
+        "description": "Data sent when updating a webhook subscription.",
+        "type": "object",
+        "properties": {
+          "url": {
+            "description": "HTTPS endpoint URL that will receive CloudEvents payloads.",
+            "type": "string"
+          },
+          "eventTypes": {
+            "description": "CloudEvents types to subscribe to.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebhookEventType"
+            },
+            "minItems": 1
+          },
+          "groupId": {
+            "description": "If set, only events for this group are delivered. Pass null to clear the filter.",
+            "type": "string",
+            "nullable": true
+          },
+          "artifactType": {
+            "description": "If set, only events for artifacts of this type are delivered. Pass null to clear the filter.",
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "description": "Human-readable description of the subscription.",
+            "type": "string"
+          },
+          "enabled": {
+            "description": "Whether the subscription is active.",
+            "type": "boolean"
+          }
+        }
+      },
+      "WebhookSubscription": {
+        "description": "A webhook subscription for CloudEvents notifications.",
+        "required": [
+          "subscriptionId",
+          "url",
+          "eventTypes",
+          "enabled"
+        ],
+        "type": "object",
+        "properties": {
+          "subscriptionId": {
+            "description": "Unique subscription identifier.",
+            "type": "string"
+          },
+          "url": {
+            "description": "HTTPS endpoint URL that receives CloudEvents payloads.",
+            "type": "string"
+          },
+          "eventTypes": {
+            "description": "Subscribed CloudEvents types.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebhookEventType"
+            }
+          },
+          "groupId": {
+            "description": "Group filter, if configured.",
+            "type": "string"
+          },
+          "artifactType": {
+            "description": "Artifact type filter, if configured.",
+            "type": "string"
+          },
+          "description": {
+            "description": "Human-readable description.",
+            "type": "string"
+          },
+          "enabled": {
+            "description": "Whether the subscription is active.",
+            "type": "boolean"
+          },
+          "secret": {
+            "description": "Signing secret returned only on create. Never returned on subsequent reads.",
+            "type": "string"
+          },
+          "createdBy": {
+            "description": "Principal that created the subscription.",
+            "type": "string"
+          },
+          "createdOn": {
+            "format": "date-time",
+            "description": "When the subscription was created.",
+            "type": "string"
+          },
+          "modifiedOn": {
+            "format": "date-time",
+            "description": "When the subscription was last modified.",
+            "type": "string"
+          }
+        }
+      },
+      "WebhookSubscriptionSearchResults": {
+        "description": "Paged list of webhook subscriptions.",
+        "required": [
+          "count",
+          "subscriptions"
+        ],
+        "type": "object",
+        "properties": {
+          "subscriptions": {
+            "description": "Webhook subscriptions in this page.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebhookSubscription"
+            }
+          },
+          "count": {
+            "description": "Total number of subscriptions matching the query.",
+            "type": "integer"
+          }
+        }
+      },
+      "WebhookDelivery": {
+        "description": "A webhook delivery record.",
+        "required": [
+          "deliveryId",
+          "subscriptionId",
+          "cloudEventId",
+          "eventType",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "deliveryId": {
+            "description": "Unique delivery identifier.",
+            "type": "integer",
+            "format": "int64"
+          },
+          "subscriptionId": {
+            "description": "Parent subscription identifier.",
+            "type": "string"
+          },
+          "cloudEventId": {
+            "description": "CloudEvents id of the payload.",
+            "type": "string"
+          },
+          "eventType": {
+            "description": "CloudEvents type.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Delivery status (PENDING, IN_PROGRESS, DELIVERED, DEAD_LETTER).",
+            "type": "string"
+          },
+          "attemptCount": {
+            "description": "Number of delivery attempts made.",
+            "type": "integer"
+          },
+          "nextAttemptOn": {
+            "format": "date-time",
+            "description": "Scheduled time for the next retry attempt.",
+            "type": "string"
+          },
+          "lastError": {
+            "description": "Last delivery error message, if any.",
+            "type": "string"
+          },
+          "createdOn": {
+            "format": "date-time",
+            "description": "When the delivery was created.",
+            "type": "string"
+          },
+          "modifiedOn": {
+            "format": "date-time",
+            "description": "When the delivery was last updated.",
+            "type": "string"
+          }
+        }
+      },
+      "WebhookDeliverySearchResults": {
+        "description": "Paged list of webhook deliveries.",
+        "required": [
+          "count",
+          "deliveries"
+        ],
+        "type": "object",
+        "properties": {
+          "deliveries": {
+            "description": "Webhook deliveries in this page.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebhookDelivery"
+            }
+          },
+          "count": {
+            "description": "Total number of deliveries for the subscription.",
+            "type": "integer"
+          }
+        }
+      },
       "EditableVersionMetaData": {
         "title": "Root Type for EditableArtifactMetaData",
         "description": "",
@@ -9334,6 +9877,10 @@
     {
       "name": "GitOps",
       "description": "Experimental. Management and status endpoints for the GitOps storage backend. These endpoints are only available when the registry is configured with `apicurio.storage.kind=gitops`."
+    },
+    {
+      "name": "Webhooks",
+      "description": "Experimental. CloudEvents webhook subscription management and delivery monitoring. Requires `apicurio.webhooks.enabled=true` and PostgreSQL storage."
     }
   ],
   "x-codegen": {

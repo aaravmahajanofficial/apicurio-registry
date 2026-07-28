@@ -12,6 +12,13 @@ import lombok.ToString;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * Persistence model for a webhook subscription ({@code webhook_subscriptions} table).
+ * <p>
+ * Maps operator-configured endpoint URL, event-type filters, optional group/artifact-type filters,
+ * and signing secret metadata. The plaintext secret is never stored; only {@link #secretHash} is
+ * persisted.
+ */
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

@@ -11,6 +11,12 @@ import lombok.ToString;
 
 import java.util.Date;
 
+/**
+ * Persistence model for a webhook fanout record ({@code webhook_fanout} table).
+ * <p>
+ * Captures a durable snapshot of a registry storage event ({@link #sourcePayload}) so fanout and
+ * reconciliation can proceed independently of the ephemeral Debezium outbox table.
+ */
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

@@ -41,6 +41,11 @@ import io.apicurio.registry.rest.v3.beans.Rule;
 import io.apicurio.registry.rest.v3.beans.SnapshotMetaData;
 import io.apicurio.registry.rest.v3.beans.UpdateConfigurationProperty;
 import io.apicurio.registry.rest.v3.beans.UpdateRole;
+import io.apicurio.registry.rest.v3.beans.CreateWebhookSubscription;
+import io.apicurio.registry.rest.v3.beans.UpdateWebhookSubscription;
+import io.apicurio.registry.rest.v3.beans.WebhookDeliverySearchResults;
+import io.apicurio.registry.rest.v3.beans.WebhookSubscription;
+import io.apicurio.registry.rest.v3.beans.WebhookSubscriptionSearchResults;
 import io.apicurio.registry.rest.v3.impl.shared.DataExporter;
 import io.apicurio.registry.rules.DefaultRuleDeletionException;
 import io.apicurio.registry.rules.RulesProperties;
@@ -168,6 +173,9 @@ public class AdminResourceImpl implements AdminResource {
 
     @Inject
     UsageTelemetryConfig usageTelemetryConfig;
+
+    @Inject
+    WebhooksResourceImpl webhooksResource;
 
     @Inject
     UsageAggregationJob usageAggregationJob;
@@ -912,6 +920,71 @@ public class AdminResourceImpl implements AdminResource {
     @Authorized(style = AuthorizedStyle.None, level = AuthorizedLevel.Admin)
     public void deleteGlobalContractRuleset() {
         storage.deleteGlobalContractRuleset();
+    }
+
+    // ========== Webhook Subscriptions ==========
+
+    /**
+     * @see io.apicurio.registry.rest.v3.AdminResource#listWebhookSubscriptions(java.math.BigInteger,
+     *      java.math.BigInteger)
+     */
+    @Override
+    @Authorized(style = AuthorizedStyle.None, level = AuthorizedLevel.Read)
+    public WebhookSubscriptionSearchResults listWebhookSubscriptions(BigInteger limit,
+            BigInteger offset) {
+        return webhooksResource.listWebhookSubscriptions(limit, offset);
+    }
+
+    /**
+     * @see io.apicurio.registry.rest.v3.AdminResource#createWebhookSubscription(io.apicurio.registry.rest.v3.beans.CreateWebhookSubscription)
+     */
+    @Override
+    @Audited
+    @Authorized(style = AuthorizedStyle.None, level = AuthorizedLevel.Admin)
+    public WebhookSubscription createWebhookSubscription(CreateWebhookSubscription data) {
+        return webhooksResource.createWebhookSubscription(data);
+    }
+
+    /**
+     * @see io.apicurio.registry.rest.v3.AdminResource#getWebhookSubscription(java.lang.String)
+     */
+    @Override
+    @Authorized(style = AuthorizedStyle.None, level = AuthorizedLevel.Read)
+    public WebhookSubscription getWebhookSubscription(String subscriptionId) {
+        return webhooksResource.getWebhookSubscription(subscriptionId);
+    }
+
+    /**
+     * @see io.apicurio.registry.rest.v3.AdminResource#updateWebhookSubscription(java.lang.String,
+     *      io.apicurio.registry.rest.v3.beans.UpdateWebhookSubscription)
+     */
+    @Override
+    @Audited
+    @Authorized(style = AuthorizedStyle.None, level = AuthorizedLevel.Admin)
+    public WebhookSubscription updateWebhookSubscription(String subscriptionId,
+            UpdateWebhookSubscription data) {
+        return webhooksResource.updateWebhookSubscription(subscriptionId, data);
+    }
+
+    /**
+     * @see io.apicurio.registry.rest.v3.AdminResource#deleteWebhookSubscription(java.lang.String)
+     */
+    @Override
+    @Audited
+    @Authorized(style = AuthorizedStyle.None, level = AuthorizedLevel.Admin)
+    public void deleteWebhookSubscription(String subscriptionId) {
+        webhooksResource.deleteWebhookSubscription(subscriptionId);
+    }
+
+    /**
+     * @see io.apicurio.registry.rest.v3.AdminResource#listWebhookDeliveries(java.lang.String,
+     *      java.math.BigInteger, java.math.BigInteger)
+     */
+    @Override
+    @Authorized(style = AuthorizedStyle.None, level = AuthorizedLevel.Read)
+    public WebhookDeliverySearchResults listWebhookDeliveries(String subscriptionId, BigInteger limit,
+            BigInteger offset) {
+        return webhooksResource.listWebhookDeliveries(subscriptionId, limit, offset);
     }
 
 }

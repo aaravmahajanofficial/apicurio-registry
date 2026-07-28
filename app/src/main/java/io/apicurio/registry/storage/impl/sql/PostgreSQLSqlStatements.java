@@ -140,6 +140,11 @@ public class PostgreSQLSqlStatements extends CommonSqlStatements {
                 """;
     }
 
+    /**
+     * PostgreSQL-specific batch claim using {@code FOR UPDATE SKIP LOCKED}.
+     *
+     * @return UPDATE … RETURNING that sets status to {@code IN_PROGRESS}
+     */
     @Override
     public String claimWebhookDeliveries() {
         return """

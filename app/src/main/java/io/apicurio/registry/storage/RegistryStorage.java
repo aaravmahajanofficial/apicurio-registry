@@ -1219,87 +1219,176 @@ public interface RegistryStorage extends DynamicConfigStorage {
     boolean supportsDatabaseEvents();
 
     /**
-     * true if the underlying storage supports CloudEvents webhook notifications (PostgreSQL only).
+     * @return {@code true} if the underlying storage supports CloudEvents webhook notifications
+     *         (PostgreSQL SQL only in v1)
      */
     default boolean supportsWebhooks() {
         return false;
     }
 
+    /**
+     * Persists a new webhook subscription.
+     *
+     * @param subscription the subscription to create
+     */
     default void createWebhookSubscription(WebhookSubscriptionDto subscription)
             throws RegistryStorageException {
         throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
     }
 
+    /**
+     * @param subscriptionId the subscription identifier
+     * @return the subscription
+     */
     default WebhookSubscriptionDto getWebhookSubscription(String subscriptionId)
             throws RegistryStorageException {
         throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
     }
 
+    /**
+     * Updates an existing webhook subscription.
+     *
+     * @param subscription the subscription with updated fields
+     */
     default void updateWebhookSubscription(WebhookSubscriptionDto subscription)
             throws RegistryStorageException {
         throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
     }
 
+    /**
+     * Deletes a webhook subscription and its pending deliveries.
+     *
+     * @param subscriptionId the subscription identifier
+     */
     default void deleteWebhookSubscription(String subscriptionId) throws RegistryStorageException {
         throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
     }
 
+    /**
+     * @param offset number of subscriptions to skip
+     * @param limit maximum subscriptions to return
+     * @return a page of subscriptions
+     */
     default List<WebhookSubscriptionDto> listWebhookSubscriptions(int offset, int limit)
             throws RegistryStorageException {
         throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
     }
 
+    /**
+     * @return total number of webhook subscriptions
+     */
     default long countWebhookSubscriptions() throws RegistryStorageException {
         throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
     }
 
+    /**
+     * @return all enabled subscriptions (used by the fanout processor)
+     */
     default List<WebhookSubscriptionDto> getEnabledWebhookSubscriptions() throws RegistryStorageException {
         throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
     }
 
+    /**
+     * Records a fanout snapshot for later matching and enqueue.
+     *
+     * @param fanout the fanout row to insert
+     */
     default void insertWebhookFanout(WebhookFanoutDto fanout) throws RegistryStorageException {
         throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
     }
 
+    /**
+     * Updates fanout status after a fanout or reconciliation attempt.
+     *
+     * @param fanout the fanout row with updated status
+     */
     default void updateWebhookFanoutStatus(WebhookFanoutDto fanout) throws RegistryStorageException {
         throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
     }
 
+    /**
+     * @param maxAttempts maximum fanout attempts before exclusion
+     * @param limit maximum rows to return
+     * @return fanout rows pending reconciliation
+     */
     default List<WebhookFanoutDto> getPendingWebhookFanouts(int maxAttempts, int limit)
             throws RegistryStorageException {
         throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
     }
 
+    /**
+     * Enqueues a webhook delivery and returns its ID.
+     *
+     * @param delivery the delivery to insert
+     * @return the delivery ID
+     */
     default long insertWebhookDelivery(WebhookDeliveryDto delivery) throws RegistryStorageException {
         throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
     }
 
+    /**
+     * Atomically claims pending deliveries for the delivery worker (PostgreSQL only).
+     *
+     * @param batchSize maximum deliveries to claim
+     * @return claimed delivery rows
+     */
     default List<WebhookDeliveryDto> claimWebhookDeliveries(int batchSize) throws RegistryStorageException {
         throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
     }
 
+    /**
+     * Updates a delivery after an attempt or status transition.
+     *
+     * @param delivery the delivery with updated fields
+     */
     default void updateWebhookDelivery(WebhookDeliveryDto delivery) throws RegistryStorageException {
         throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
     }
 
+    /**
+     * @param subscriptionId the parent subscription
+     * @param offset number of deliveries to skip
+     * @param limit maximum deliveries to return
+     * @return delivery rows for the subscription
+     */
     default List<WebhookDeliveryDto> getWebhookDeliveries(String subscriptionId, int offset, int limit)
             throws RegistryStorageException {
         throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
     }
 
+    /**
+     * @param subscriptionId the parent subscription
+     * @return total delivery count for the subscription
+     */
     default long countWebhookDeliveries(String subscriptionId) throws RegistryStorageException {
         throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
     }
 
+    /**
+     * Appends a delivery attempt audit log entry.
+     *
+     * @param log the log row to insert
+     */
     default void insertWebhookDeliveryLog(WebhookDeliveryLogDto log) throws RegistryStorageException {
         throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
     }
 
+    /**
+     * @param subscriptionId the parent subscription
+     * @param offset number of log entries to skip
+     * @param limit maximum log entries to return
+     * @return delivery attempt log entries
+     */
     default List<WebhookDeliveryLogDto> getWebhookDeliveryLog(String subscriptionId, int offset, int limit)
             throws RegistryStorageException {
         throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
     }
 
+    /**
+     * Purges delivery log rows older than the cutoff timestamp.
+     *
+     * @param cutoffTimestamp epoch millis cutoff
+     */
     default void deleteOldWebhookDeliveryLogs(long cutoffTimestamp) throws RegistryStorageException {
         throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
     }

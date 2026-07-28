@@ -11,6 +11,13 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import static io.apicurio.common.apps.config.ConfigPropertyCategory.CATEGORY_REST;
 
+/**
+ * Configuration for CloudEvents webhook notifications (experimental).
+ * <p>
+ * Webhooks are disabled by default ({@code apicurio.webhooks.enabled=false}). When enabled, only
+ * PostgreSQL-backed SQL storage is operational; other storage variants return HTTP 409 on admin
+ * endpoints. Property descriptions are indexed for the config reference via {@link Info}.
+ */
 @ApplicationScoped
 public class WebhooksConfig {
 
@@ -103,86 +110,149 @@ public class WebhooksConfig {
     @Info(category = CATEGORY_REST, description = "Maximum rule violations included in a rule.violated CloudEvent", availableSince = "3.3.0", experimental = true)
     int violationsMaxCount;
 
+    /**
+     * @return {@code true} when webhooks are enabled and the current storage supports them
+     */
     public boolean isOperational() {
         return enabled && storage.supportsWebhooks();
     }
 
+    /**
+     * @return whether {@code http://} endpoint URLs are permitted at registration time
+     */
     public boolean isAllowInsecureUrls() {
         return allowInsecureUrls;
     }
 
+    /**
+     * @return whether private/link-local IPs should be blocked for webhook URLs (Phase 2b)
+     */
     public boolean isBlockPrivateIps() {
         return blockPrivateIps;
     }
 
+    /**
+     * @return whether {@code rule.violated} CloudEvents are emitted on rejected writes
+     */
     public boolean isRuleViolationsEnabled() {
         return ruleViolationsEnabled;
     }
 
+    /**
+     * @return maximum subscriptions allowed registry-wide
+     */
     public int getSubscriptionsMaxCount() {
         return subscriptionsMaxCount;
     }
 
+    /**
+     * @return maximum delivery attempts before dead-letter
+     */
     public int getDeliveryMaxAttempts() {
         return deliveryMaxAttempts;
     }
 
+    /**
+     * @return initial retry delay for failed deliveries
+     */
     public String getDeliveryInitialDelay() {
         return deliveryInitialDelay;
     }
 
+    /**
+     * @return maximum retry delay cap for failed deliveries
+     */
     public String getDeliveryMaxDelay() {
         return deliveryMaxDelay;
     }
 
+    /**
+     * @return exponential backoff multiplier for delivery retries
+     */
     public double getDeliveryBackoffMultiplier() {
         return deliveryBackoffMultiplier;
     }
 
+    /**
+     * @return number of deliveries claimed per worker poll
+     */
     public int getDeliveryBatchSize() {
         return deliveryBatchSize;
     }
 
+    /**
+     * @return maximum concurrent HTTP deliveries per instance
+     */
     public int getDeliveryConcurrency() {
         return deliveryConcurrency;
     }
 
+    /**
+     * @return per-subscription in-flight delivery cap
+     */
     public int getDeliveryMaxInflightPerSubscription() {
         return deliveryMaxInflightPerSubscription;
     }
 
+    /**
+     * @return delivery worker poll interval
+     */
     public String getDeliveryPollEvery() {
         return deliveryPollEvery;
     }
 
+    /**
+     * @return HTTP timeout for outbound webhook requests
+     */
     public String getDeliveryHttpTimeout() {
         return deliveryHttpTimeout;
     }
 
+    /**
+     * @return duration after which stale in-progress deliveries are reclaimed
+     */
     public String getDeliveryInProgressTimeout() {
         return deliveryInProgressTimeout;
     }
 
+    /**
+     * @return graceful shutdown drain timeout
+     */
     public String getDeliveryShutdownTimeout() {
         return deliveryShutdownTimeout;
     }
 
+    /**
+     * @return consecutive failures before auto-disabling a subscription
+     */
     public int getDeliveryAutoDisableThreshold() {
         return deliveryAutoDisableThreshold;
     }
 
+    /**
+     * @return fanout reconciler poll interval
+     */
     public String getFanoutReconcileEvery() {
         return fanoutReconcileEvery;
     }
 
+    /**
+     * @return delivery audit log retention period
+     */
     public String getLogRetention() {
         return logRetention;
     }
 
+    /**
+     * @return maximum CloudEvent payload size before truncation
+     */
     public int getPayloadMaxBytes() {
         return payloadMaxBytes;
     }
 
+    /**
+     * @return maximum rule violations included in a violation event payload
+     */
     public int getViolationsMaxCount() {
         return violationsMaxCount;
     }

@@ -6,6 +6,9 @@ import io.apicurio.registry.storage.impl.sql.jdb.RowMapper;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+/**
+ * Maps {@code webhook_delivery_log} rows to {@link WebhookDeliveryLogDto}.
+ */
 public class WebhookDeliveryLogDtoMapper implements RowMapper<WebhookDeliveryLogDto> {
 
     public static final WebhookDeliveryLogDtoMapper instance = new WebhookDeliveryLogDtoMapper();
@@ -13,6 +16,9 @@ public class WebhookDeliveryLogDtoMapper implements RowMapper<WebhookDeliveryLog
     private WebhookDeliveryLogDtoMapper() {
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public WebhookDeliveryLogDto map(ResultSet rs) throws SQLException {
         WebhookDeliveryLogDto dto = new WebhookDeliveryLogDto();
