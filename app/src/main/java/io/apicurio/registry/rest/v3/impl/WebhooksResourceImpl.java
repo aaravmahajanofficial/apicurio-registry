@@ -74,7 +74,8 @@ public class WebhooksResourceImpl {
         ParameterValidationUtils.requireParameter("url", data.getUrl());
         ParameterValidationUtils.requireParameter("eventTypes", data.getEventTypes());
 
-        WebhookUrlValidator.validate(data.getUrl(), webhooksConfig.isAllowInsecureUrls());
+        WebhookUrlValidator.validate(data.getUrl(), webhooksConfig.isAllowInsecureUrls(),
+                webhooksConfig.isBlockPrivateIps());
         validateEventTypes(WebhooksApiUtil.fromEventTypes(data.getEventTypes()));
 
         if (storage.countWebhookSubscriptions() >= webhooksConfig.getSubscriptionsMaxCount()) {
@@ -139,7 +140,8 @@ public class WebhooksResourceImpl {
 
         WebhookSubscriptionDto existing = storage.getWebhookSubscription(subscriptionId);
         if (data.getUrl() != null) {
-            WebhookUrlValidator.validate(data.getUrl(), webhooksConfig.isAllowInsecureUrls());
+            WebhookUrlValidator.validate(data.getUrl(), webhooksConfig.isAllowInsecureUrls(),
+                    webhooksConfig.isBlockPrivateIps());
         }
         if (data.getEventTypes() != null) {
             validateEventTypes(WebhooksApiUtil.fromEventTypes(data.getEventTypes()));
