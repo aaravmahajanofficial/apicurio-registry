@@ -15,18 +15,6 @@
  */
 package io.apicurio.registry.webhooks;
 
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import io.vertx.core.Vertx;
-import io.vertx.ext.web.client.WebClient;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.lang.reflect.Field;
-import java.net.InetAddress;
-import java.util.concurrent.ExecutionException;
-
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
@@ -37,6 +25,20 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.net.InetAddress;
+import java.util.concurrent.ExecutionException;
+
+import io.vertx.core.Vertx;
+import io.vertx.ext.web.client.WebClient;
 
 class WebhookHttpClientTest {
 
@@ -92,7 +94,7 @@ class WebhookHttpClientTest {
 
         String host = "localhost";
         when(hostnameResolver.resolveAll(host))
-                .thenReturn(new InetAddress[] { InetAddress.getByName("8.8.8.8") });
+                .thenReturn(new InetAddress[]{InetAddress.getByName("8.8.8.8")});
 
         String url = "http://" + host + ":" + wireMockServer.port() + "/hook";
         String secret = "whsec_delivery_test_secret";
@@ -102,7 +104,7 @@ class WebhookHttpClientTest {
                 .toCompletableFuture().get();
         assertEquals(200, response.statusCode());
 
-        String signatureHeader = wireMockServer.getServeEvents().get(0).getRequest()
+        String signatureHeader = wireMockServer.getAllServeEvents().getFirst().getRequest()
                 .getHeader(WebhookSignatureService.SIGNATURE_HEADER);
         assertTrue(new WebhookSignatureService().verify(secret, body, signatureHeader));
     }
@@ -114,7 +116,7 @@ class WebhookHttpClientTest {
 
         String host = "localhost";
         when(hostnameResolver.resolveAll(host))
-                .thenReturn(new InetAddress[] { InetAddress.getByName("8.8.8.8") });
+                .thenReturn(new InetAddress[]{InetAddress.getByName("8.8.8.8")});
 
         String url = "http://" + host + ":" + wireMockServer.port() + "/hook";
         ExecutionException ex = assertThrows(ExecutionException.class,
@@ -125,7 +127,7 @@ class WebhookHttpClientTest {
     @Test
     void failsWhenDnsRebindsToPrivateIpAtDelivery() throws Exception {
         when(hostnameResolver.resolveAll("public.example"))
-                .thenReturn(new InetAddress[] { InetAddress.getByName("10.0.0.9") });
+                .thenReturn(new InetAddress[]{InetAddress.getByName("10.0.0.9")});
 
         wireMockServer.stubFor(post(anyUrl()).willReturn(aResponse().withStatus(200)));
 
@@ -133,7 +135,7 @@ class WebhookHttpClientTest {
         ExecutionException ex = assertThrows(ExecutionException.class,
                 () -> httpClient.post(url, "whsec_x", "{}").toCompletionStage().toCompletableFuture().get());
         assertInstanceOf(WebhookSsrfException.class, ex.getCause());
-        assertEquals(0, wireMockServer.getServeEvents().size());
+        assertEquals(0, wireMockServer.getAllServeEvents().size());
     }
 
     private static void setField(Object target, String fieldName, Object value) throws Exception {
