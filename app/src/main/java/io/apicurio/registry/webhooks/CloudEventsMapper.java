@@ -15,15 +15,6 @@
  */
 package io.apicurio.registry.webhooks;
 
-import io.apicurio.registry.storage.StorageEventType;
-import io.apicurio.registry.types.VersionState;
-import io.cloudevents.CloudEvent;
-import io.cloudevents.core.builder.CloudEventBuilder;
-import io.cloudevents.core.format.EventFormat;
-import io.cloudevents.core.provider.EventFormatProvider;
-import io.cloudevents.jackson.JsonFormat;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import org.json.JSONObject;
 
 import java.net.URI;
@@ -33,6 +24,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+
+import io.apicurio.registry.storage.StorageEventType;
+import io.apicurio.registry.types.VersionState;
+import io.cloudevents.CloudEvent;
+import io.cloudevents.core.builder.CloudEventBuilder;
+import io.cloudevents.core.format.EventFormat;
+import io.cloudevents.core.provider.EventFormatProvider;
+import io.cloudevents.jackson.JsonFormat;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 /**
  * Translates registry storage outbox payloads into CloudEvents v1.0 structured JSON envelopes.
@@ -55,7 +56,7 @@ public class CloudEventsMapper {
     /**
      * Maps a persisted storage outbox snapshot to zero or more webhook CloudEvents.
      *
-     * @param storageEventType the {@link StorageEventType#name()} stored in {@code webhook_fanout}
+     * @param storageEventType  the {@link StorageEventType#name()} stored in {@code webhook_fanout}
      * @param sourcePayloadJson the JSON payload snapshot from the outbox CDI event
      * @return mapped envelopes; empty when the storage event is not webhook-relevant
      */
@@ -83,12 +84,15 @@ public class CloudEventsMapper {
     }
 
     /**
-     * Builds a {@link WebhookEventTypes#RULE_VIOLATED} envelope for rejected artifact writes (Phase 4).
+     * Builds a {@link WebhookEventTypes#RULE_VIOLATED} envelope for a rejected write (no outbox row).
+     * <p>
+     * Uses a caller-supplied UUID v4 {@code cloudEventId} because rule violations are not derived from
+     * outbox events.
      *
-     * @param cloudEventId unique event id (UUID v4; no outbox row exists for violations)
-     * @param subject optional {@code groupId/artifactId} subject
-     * @param data violation payload data object
-     * @return serialized structured-mode JSON envelope
+     * @param cloudEventId unique event id (UUID v4)
+     * @param subject      optional {@code groupId/artifactId} subject
+     * @param data         violation payload built by {@link RuleViolationEmitter}
+     * @return mapped envelope ready for delivery enqueue
      */
     public MappedCloudEvent mapRuleViolation(String cloudEventId, String subject, JSONObject data) {
         String payload = serialize(
@@ -143,7 +147,7 @@ public class CloudEventsMapper {
     }
 
     private static WebhookEventMapping mapping(String eventType, boolean includeVersionInSubject,
-            String... dataFields) {
+                                               String... dataFields) {
         return new WebhookEventMapping(eventType, includeVersionInSubject, dataFields);
     }
 
@@ -177,7 +181,7 @@ public class CloudEventsMapper {
      * Derives a stable CloudEvents {@code id} from the outbox event id and webhook event type.
      *
      * @param outboxEventId the outbox event id from the storage snapshot
-     * @param eventType the target CloudEvents type string
+     * @param eventType     the target CloudEvents type string
      * @return deterministic UUID string for deduplication
      */
     public static String deterministicCloudEventId(String outboxEventId, String eventType) {
@@ -186,7 +190,7 @@ public class CloudEventsMapper {
     }
 
     private CloudEvent buildCloudEvent(String cloudEventId, String eventType, String subject,
-            JSONObject data) {
+                                       JSONObject data) {
         byte[] dataBytes = truncateIfNeeded(data.toString());
         CloudEventBuilder builder = CloudEventBuilder.v1()
                 .withId(cloudEventId)
@@ -220,6 +224,6 @@ public class CloudEventsMapper {
     }
 
     private record WebhookEventMapping(String eventType, boolean includeVersionInSubject,
-            String[] dataFields) {
+                                       String[] dataFields) {
     }
 }

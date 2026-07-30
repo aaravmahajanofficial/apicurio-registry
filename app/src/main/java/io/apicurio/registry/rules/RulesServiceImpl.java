@@ -1,25 +1,26 @@
 package io.apicurio.registry.rules;
 
-import io.apicurio.registry.content.TypedContent;
-import io.apicurio.registry.metrics.OTelMetricsProvider;
-import io.apicurio.registry.rest.v3.beans.ArtifactReference;
-import io.apicurio.registry.storage.RegistryStorage;
-import io.apicurio.registry.storage.dto.LazyContentList;
-import io.apicurio.registry.storage.dto.RuleConfigurationDto;
-import io.apicurio.registry.storage.dto.StoredArtifactVersionDto;
-import io.apicurio.registry.cdi.Current;
-import io.apicurio.registry.rules.violation.RuleViolationException;
-import io.apicurio.registry.types.RuleType;
-import io.apicurio.registry.types.provider.ArtifactTypeUtilProviderFactory;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import io.apicurio.registry.cdi.Current;
+import io.apicurio.registry.content.TypedContent;
+import io.apicurio.registry.metrics.OTelMetricsProvider;
+import io.apicurio.registry.rest.v3.beans.ArtifactReference;
+import io.apicurio.registry.rules.violation.RuleViolationException;
+import io.apicurio.registry.storage.RegistryStorage;
+import io.apicurio.registry.storage.dto.LazyContentList;
+import io.apicurio.registry.storage.dto.RuleConfigurationDto;
+import io.apicurio.registry.storage.dto.StoredArtifactVersionDto;
+import io.apicurio.registry.types.RuleType;
+import io.apicurio.registry.types.provider.ArtifactTypeUtilProviderFactory;
+import io.apicurio.registry.webhooks.RuleViolationEmitter;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 /**
  * Implements the {@link RulesService} interface.
@@ -43,22 +44,25 @@ public class RulesServiceImpl implements RulesService {
     @Inject
     ArtifactTypeUtilProviderFactory providerFactory;
 
+    @Inject
+    RuleViolationEmitter ruleViolationEmitter;
+
     /**
      * @see io.apicurio.registry.rules.RulesService#applyRules(String, String, String, TypedContent,
-     *      RuleApplicationType, List, Map)
+     * RuleApplicationType, List, Map)
      */
     @Override
     public void applyRules(String groupId, String artifactId, String artifactType, TypedContent content,
-            RuleApplicationType ruleApplicationType, List<ArtifactReference> references,
-            Map<String, TypedContent> resolvedReferences) throws RuleViolationException {
+                           RuleApplicationType ruleApplicationType, List<ArtifactReference> references,
+                           Map<String, TypedContent> resolvedReferences) throws RuleViolationException {
         applyRules(storage, groupId, artifactId, artifactType, content, ruleApplicationType,
                 references, resolvedReferences);
     }
 
     @Override
     public void applyRules(RegistryStorage storageToUse, String groupId, String artifactId,
-            String artifactType, TypedContent content, RuleApplicationType ruleApplicationType,
-            List<ArtifactReference> references, Map<String, TypedContent> resolvedReferences)
+                           String artifactType, TypedContent content, RuleApplicationType ruleApplicationType,
+                           List<ArtifactReference> references, Map<String, TypedContent> resolvedReferences)
             throws RuleViolationException {
         @SuppressWarnings("unchecked")
         Set<RuleType> artifactRules = Collections.EMPTY_SET;
@@ -74,29 +78,29 @@ public class RulesServiceImpl implements RulesService {
         }
 
         applyAllRules(storageToUse, groupId, artifactId, artifactType, currentContent, content,
-                artifactRules, references, resolvedReferences);
+                artifactRules, references, resolvedReferences, ruleApplicationType);
     }
 
     @Override
     public void applyRules(RegistryStorage storageToUse, String groupId, String artifactId,
-            String artifactType, TypedContent content, List<TypedContent> existingContent,
-            List<ArtifactReference> references, Map<String, TypedContent> resolvedReferences)
+                           String artifactType, TypedContent content, List<TypedContent> existingContent,
+                           List<ArtifactReference> references, Map<String, TypedContent> resolvedReferences)
             throws RuleViolationException {
         Set<RuleType> artifactRules = new HashSet<>(storageToUse.getArtifactRules(groupId, artifactId));
         applyAllRules(storageToUse, groupId, artifactId, artifactType, existingContent, content,
-                artifactRules, references, resolvedReferences);
+                artifactRules, references, resolvedReferences, RuleApplicationType.UPDATE);
     }
 
     private void applyAllRules(RegistryStorage storageToUse, String groupId, String artifactId,
-            String artifactType, List<TypedContent> currentContent, TypedContent updatedContent,
-            Set<RuleType> artifactRules, List<ArtifactReference> references,
-            Map<String, TypedContent> resolvedReferences) {
+                               String artifactType, List<TypedContent> currentContent, TypedContent updatedContent,
+                               Set<RuleType> artifactRules, List<ArtifactReference> references,
+                               Map<String, TypedContent> resolvedReferences, RuleApplicationType applicationType) {
 
         Map<RuleType, RuleConfigurationDto> allRules = new HashMap<>();
 
         // Get the group rules (we already have the artifact rules)
         Set<RuleType> groupRules = storageToUse.isGroupExists(groupId)
-            ? new HashSet<>(storageToUse.getGroupRules(groupId)) : Set.of();
+                ? new HashSet<>(storageToUse.getGroupRules(groupId)) : Set.of();
         // Get the global rules
         Set<RuleType> globalRules = new HashSet<>(storageToUse.getGlobalRules());
         // Get the configured default global rules
@@ -119,14 +123,14 @@ public class RulesServiceImpl implements RulesService {
         for (RuleType ruleType : allRules.keySet()) {
             applyRule(storageToUse, groupId, artifactId, artifactType, currentContent, updatedContent,
                     ruleType, allRules.get(ruleType).getConfiguration(), references,
-                    resolvedReferences);
+                    resolvedReferences, applicationType);
         }
     }
 
     @Override
     public void applyRule(String groupId, String artifactId, String artifactType, TypedContent content,
-            RuleType ruleType, String ruleConfiguration, RuleApplicationType ruleApplicationType,
-            List<ArtifactReference> references, Map<String, TypedContent> resolvedReferences)
+                          RuleType ruleType, String ruleConfiguration, RuleApplicationType ruleApplicationType,
+                          List<ArtifactReference> references, Map<String, TypedContent> resolvedReferences)
             throws RuleViolationException {
         LazyContentList currentContent = null;
         if (ruleApplicationType == RuleApplicationType.UPDATE) {
@@ -134,15 +138,15 @@ public class RulesServiceImpl implements RulesService {
                     storage.getEnabledArtifactContentIds(groupId, artifactId));
         }
         applyRule(storage, groupId, artifactId, artifactType, currentContent, content, ruleType,
-                ruleConfiguration, references, resolvedReferences);
+                ruleConfiguration, references, resolvedReferences, ruleApplicationType);
     }
 
     // Metrics are recorded here even during dry-run requests because rule evaluation genuinely
     // executes during dry-run — only artifact/version creation metrics are suppressed.
     private void applyRule(RegistryStorage storageToUse, String groupId, String artifactId,
-            String artifactType, List<TypedContent> currentContent, TypedContent updatedContent,
-            RuleType ruleType, String ruleConfiguration, List<ArtifactReference> references,
-            Map<String, TypedContent> resolvedReferences) {
+                           String artifactType, List<TypedContent> currentContent, TypedContent updatedContent,
+                           RuleType ruleType, String ruleConfiguration, List<ArtifactReference> references,
+                           Map<String, TypedContent> resolvedReferences, RuleApplicationType applicationType) {
         RuleExecutor executor = factory.createExecutor(ruleType);
         RuleContext context = RuleContext.builder().groupId(groupId).artifactId(artifactId)
                 .artifactType(artifactType).currentContent(currentContent).updatedContent(updatedContent)
@@ -154,6 +158,13 @@ public class RulesServiceImpl implements RulesService {
             if (ruleType == RuleType.VALIDITY) {
                 otelMetrics.recordSchemaValidation(artifactType, true);
             }
+        } catch (RuleViolationException ex) {
+            otelMetrics.recordRuleEvaluation(ruleType.value(), false);
+            if (ruleType == RuleType.VALIDITY) {
+                otelMetrics.recordSchemaValidation(artifactType, false);
+            }
+            ruleViolationEmitter.emit(groupId, artifactId, artifactType, applicationType, ex);
+            throw ex;
         } catch (Exception e) {
             otelMetrics.recordRuleEvaluation(ruleType.value(), false);
             if (ruleType == RuleType.VALIDITY) {
@@ -165,8 +176,8 @@ public class RulesServiceImpl implements RulesService {
 
     @Override
     public void applyRules(String groupId, String artifactId, String artifactVersion, String artifactType,
-            TypedContent updatedContent, List<ArtifactReference> references,
-            Map<String, TypedContent> resolvedReferences) throws RuleViolationException {
+                           TypedContent updatedContent, List<ArtifactReference> references,
+                           Map<String, TypedContent> resolvedReferences) throws RuleViolationException {
         StoredArtifactVersionDto versionContent = storage.getArtifactVersionContent(groupId, artifactId,
                 artifactVersion);
         TypedContent typedVersionContent = TypedContent.create(versionContent.getContent(),
@@ -174,6 +185,6 @@ public class RulesServiceImpl implements RulesService {
         Set<RuleType> artifactRules = new HashSet<>(storage.getArtifactRules(groupId, artifactId));
         applyAllRules(storage, groupId, artifactId, artifactType,
                 Collections.singletonList(typedVersionContent), updatedContent, artifactRules,
-                references, resolvedReferences);
+                references, resolvedReferences, RuleApplicationType.UPDATE);
     }
 }
