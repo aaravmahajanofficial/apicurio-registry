@@ -98,6 +98,14 @@ public class WebhooksConfig {
     @Info(category = CATEGORY_REST, description = "How often the webhook fanout reconciler polls for pending fanouts", availableSince = "3.3.0", experimental = true)
     String fanoutReconcileEvery;
 
+    @ConfigProperty(name = "apicurio.webhooks.fanout.max-attempts", defaultValue = "10")
+    @Info(category = CATEGORY_REST, description = "Maximum fanout attempts before a webhook_fanout row is abandoned", availableSince = "3.3.0", experimental = true)
+    int fanoutMaxAttempts;
+
+    @ConfigProperty(name = "apicurio.webhooks.fanout.reconcile-batch-size", defaultValue = "50")
+    @Info(category = CATEGORY_REST, description = "Maximum webhook fanout rows reconciled per poll", availableSince = "3.3.0", experimental = true)
+    int fanoutReconcileBatchSize;
+
     @ConfigProperty(name = "apicurio.webhooks.log.retention", defaultValue = "30d")
     @Info(category = CATEGORY_REST, description = "Retention period for webhook delivery audit logs", availableSince = "3.3.0", experimental = true)
     String logRetention;
@@ -234,6 +242,20 @@ public class WebhooksConfig {
      */
     public String getFanoutReconcileEvery() {
         return fanoutReconcileEvery;
+    }
+
+    /**
+     * @return maximum fanout attempts before a {@code webhook_fanout} row is abandoned
+     */
+    public int getFanoutMaxAttempts() {
+        return fanoutMaxAttempts;
+    }
+
+    /**
+     * @return maximum fanout rows reconciled per poll
+     */
+    public int getFanoutReconcileBatchSize() {
+        return fanoutReconcileBatchSize;
     }
 
     /**
