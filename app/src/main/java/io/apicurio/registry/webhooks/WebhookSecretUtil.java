@@ -8,7 +8,8 @@ import java.security.SecureRandom;
  * Utilities for generating and hashing webhook signing secrets.
  * <p>
  * Secrets use the {@code whsec_} prefix (Stripe/GitHub pattern) and are returned in plaintext only
- * on subscription create. Only a SHA-256 hash is persisted in storage.
+ * on subscription create. A SHA-256 hash and AES-GCM encrypted copy are persisted for verification
+ * and delivery-time HMAC signing respectively.
  */
 public final class WebhookSecretUtil {
 

@@ -1838,6 +1838,13 @@ public abstract class AbstractSqlRegistryStorage implements RegistryStorage {
 
     /** {@inheritDoc} */
     @Override
+    public int reclaimStaleWebhookDeliveries(Date staleBefore, int batchSize)
+            throws RegistryStorageException {
+        return webhookDeliveryRepository.reclaimStaleDeliveries(staleBefore, batchSize);
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public void updateWebhookDelivery(WebhookDeliveryDto delivery) throws RegistryStorageException {
         webhookDeliveryRepository.updateDelivery(delivery);
     }

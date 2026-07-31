@@ -20,8 +20,17 @@ package io.apicurio.registry.webhooks;
  */
 public final class WebhookDeliveryStatuses {
 
-    /** Awaiting pickup by the webhook delivery worker (Phase 5). */
+    /** Awaiting pickup by the webhook delivery worker. */
     public static final String PENDING = "PENDING";
+
+    /** Claimed by a worker and currently being delivered. */
+    public static final String IN_PROGRESS = "IN_PROGRESS";
+
+    /** Successfully delivered to the subscriber endpoint. */
+    public static final String DELIVERED = "DELIVERED";
+
+    /** Exhausted retry attempts; no further automatic delivery. */
+    public static final String DEAD_LETTER = "DEAD_LETTER";
 
     private WebhookDeliveryStatuses() {
     }

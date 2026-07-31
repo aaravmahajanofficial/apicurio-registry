@@ -131,11 +131,12 @@ public final class WebhooksApiUtil {
      * @param data the create request body
      * @param subscriptionId the generated subscription identifier
      * @param secretHash the SHA-256 hash of the signing secret
+     * @param secretEncrypted AES-GCM encrypted signing secret for delivery-time HMAC
      * @param createdBy the authenticated principal, or {@code null} if anonymous
      * @return a DTO ready for persistence
      */
     public static WebhookSubscriptionDto createToDto(CreateWebhookSubscription data, String subscriptionId,
-            String secretHash, String createdBy) {
+            String secretHash, String secretEncrypted, String createdBy) {
         boolean enabled = data.getEnabled() == null || data.getEnabled();
         return WebhookSubscriptionDto.builder()
                 .subscriptionId(subscriptionId)
@@ -144,6 +145,7 @@ public final class WebhooksApiUtil {
                 .groupIdFilter(data.getGroupId())
                 .artifactTypeFilter(data.getArtifactType())
                 .secretHash(secretHash)
+                .secretEncrypted(secretEncrypted)
                 .enabled(enabled)
                 .description(data.getDescription())
                 .createdBy(createdBy)

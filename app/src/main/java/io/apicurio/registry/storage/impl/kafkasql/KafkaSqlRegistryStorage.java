@@ -857,6 +857,13 @@ public class KafkaSqlRegistryStorage extends ReadOnlyDelegatingStorage implement
 
     /** {@inheritDoc} */
     @Override
+    public int reclaimStaleWebhookDeliveries(java.util.Date staleBefore, int batchSize)
+            throws RegistryStorageException {
+        return sqlStore.reclaimStaleWebhookDeliveries(staleBefore, batchSize);
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public void updateWebhookDelivery(io.apicurio.registry.storage.dto.WebhookDeliveryDto delivery)
             throws RegistryStorageException {
         sqlStore.updateWebhookDelivery(delivery);

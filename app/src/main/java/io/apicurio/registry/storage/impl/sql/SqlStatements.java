@@ -891,6 +891,11 @@ public interface SqlStatements {
      */
     String claimWebhookDeliveries();
 
+    /**
+     * @return UPDATE to reclaim stale {@code IN_PROGRESS} deliveries (PostgreSQL {@code SKIP LOCKED} only)
+     */
+    String reclaimStaleWebhookDeliveries();
+
     /** @return UPDATE delivery status and retry columns */
     String updateWebhookDelivery();
 

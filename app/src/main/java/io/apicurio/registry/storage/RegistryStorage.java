@@ -72,6 +72,7 @@ import io.apicurio.registry.utils.impexp.v3.GroupRuleEntity;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -1333,6 +1334,18 @@ public interface RegistryStorage extends DynamicConfigStorage {
      * @return claimed delivery rows
      */
     default List<WebhookDeliveryDto> claimWebhookDeliveries(int batchSize) throws RegistryStorageException {
+        throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
+    }
+
+    /**
+     * Reclaims stale {@code IN_PROGRESS} deliveries (PostgreSQL only).
+     *
+     * @param staleBefore cutoff timestamp for stale rows
+     * @param batchSize maximum rows to reclaim
+     * @return number of reclaimed deliveries
+     */
+    default int reclaimStaleWebhookDeliveries(Date staleBefore, int batchSize)
+            throws RegistryStorageException {
         throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
     }
 

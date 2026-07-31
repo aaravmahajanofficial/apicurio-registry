@@ -34,6 +34,7 @@ public class WebhookSubscriptionDtoMapper implements RowMapper<io.apicurio.regis
         dto.setGroupIdFilter(rs.getString("groupIdFilter"));
         dto.setArtifactTypeFilter(rs.getString("artifactTypeFilter"));
         dto.setSecretHash(rs.getString("secretHash"));
+        dto.setSecretEncrypted(rs.getString("secretEncrypted"));
         dto.setEnabled(rs.getBoolean("enabled"));
         dto.setDescription(rs.getString("description"));
         dto.setCreatedBy(rs.getString("createdBy"));

@@ -16,8 +16,8 @@ import java.util.List;
  * Persistence model for a webhook subscription ({@code webhook_subscriptions} table).
  * <p>
  * Maps operator-configured endpoint URL, event-type filters, optional group/artifact-type filters,
- * and signing secret metadata. The plaintext secret is never stored; only {@link #secretHash} is
- * persisted.
+ * and signing secret metadata. The plaintext secret is never stored; {@link #secretHash} is a
+ * SHA-256 digest and {@link #secretEncrypted} holds an AES-GCM encrypted copy for delivery signing.
  */
 @NoArgsConstructor
 @AllArgsConstructor
@@ -35,6 +35,7 @@ public class WebhookSubscriptionDto {
     private String groupIdFilter;
     private String artifactTypeFilter;
     private String secretHash;
+    private String secretEncrypted;
     private boolean enabled;
     private String description;
     private String createdBy;

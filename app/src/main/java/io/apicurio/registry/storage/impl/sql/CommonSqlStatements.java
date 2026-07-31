@@ -1591,8 +1591,8 @@ public abstract class CommonSqlStatements implements SqlStatements {
         return """
                 INSERT INTO webhook_subscriptions
                 (subscriptionId, url, eventTypes, groupIdFilter, artifactTypeFilter, secretHash,
-                 enabled, description, createdBy, createdOn, modifiedOn)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 secretEncrypted, enabled, description, createdBy, createdOn, modifiedOn)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
     }
 
@@ -1601,7 +1601,7 @@ public abstract class CommonSqlStatements implements SqlStatements {
         return """
                 UPDATE webhook_subscriptions
                 SET url = ?, eventTypes = ?, groupIdFilter = ?, artifactTypeFilter = ?, secretHash = ?,
-                    enabled = ?, description = ?, modifiedOn = ?
+                    secretEncrypted = ?, enabled = ?, description = ?, modifiedOn = ?
                 WHERE subscriptionId = ?
                 """;
     }
@@ -1679,6 +1679,17 @@ public abstract class CommonSqlStatements implements SqlStatements {
     public String claimWebhookDeliveries() {
         throw new UnsupportedOperationException(
                 "Webhook delivery claim is only supported on PostgreSQL");
+    }
+
+    /**
+     * Not supported on non-PostgreSQL dialects; use {@link PostgreSQLSqlStatements#reclaimStaleWebhookDeliveries()}.
+     *
+     * @throws UnsupportedOperationException always
+     */
+    @Override
+    public String reclaimStaleWebhookDeliveries() {
+        throw new UnsupportedOperationException(
+                "Webhook stale delivery reclaim is only supported on PostgreSQL");
     }
 
     @Override

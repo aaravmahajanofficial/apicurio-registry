@@ -59,11 +59,12 @@ public class SqlWebhookSubscriptionRepository {
                     .bind(3, subscription.getGroupIdFilter())
                     .bind(4, subscription.getArtifactTypeFilter())
                     .bind(5, subscription.getSecretHash())
-                    .bind(6, subscription.isEnabled())
-                    .bind(7, subscription.getDescription())
-                    .bind(8, subscription.getCreatedBy())
-                    .bind(9, toTimestamp(subscription.getCreatedOn()))
-                    .bind(10, toTimestamp(subscription.getModifiedOn()))
+                    .bind(6, subscription.getSecretEncrypted())
+                    .bind(7, subscription.isEnabled())
+                    .bind(8, subscription.getDescription())
+                    .bind(9, subscription.getCreatedBy())
+                    .bind(10, toTimestamp(subscription.getCreatedOn()))
+                    .bind(11, toTimestamp(subscription.getModifiedOn()))
                     .execute();
         });
     }
@@ -84,10 +85,11 @@ public class SqlWebhookSubscriptionRepository {
                     .bind(2, subscription.getGroupIdFilter())
                     .bind(3, subscription.getArtifactTypeFilter())
                     .bind(4, subscription.getSecretHash())
-                    .bind(5, subscription.isEnabled())
-                    .bind(6, subscription.getDescription())
-                    .bind(7, toTimestamp(subscription.getModifiedOn()))
-                    .bind(8, subscription.getSubscriptionId())
+                    .bind(5, subscription.getSecretEncrypted())
+                    .bind(6, subscription.isEnabled())
+                    .bind(7, subscription.getDescription())
+                    .bind(8, toTimestamp(subscription.getModifiedOn()))
+                    .bind(9, subscription.getSubscriptionId())
                     .execute();
             if (updated == 0) {
                 throw new WebhookSubscriptionNotFoundException(subscription.getSubscriptionId());

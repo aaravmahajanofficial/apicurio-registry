@@ -105,8 +105,8 @@ public class PostgreSQLSqlStatements extends CommonSqlStatements {
         return """
                 INSERT INTO webhook_subscriptions
                 (subscriptionId, url, eventTypes, groupIdFilter, artifactTypeFilter, secretHash,
-                 enabled, description, createdBy, createdOn, modifiedOn)
-                VALUES (?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?)
+                 secretEncrypted, enabled, description, createdBy, createdOn, modifiedOn)
+                VALUES (?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
     }
 
@@ -115,7 +115,7 @@ public class PostgreSQLSqlStatements extends CommonSqlStatements {
         return """
                 UPDATE webhook_subscriptions
                 SET url = ?, eventTypes = ?::jsonb, groupIdFilter = ?, artifactTypeFilter = ?,
-                    secretHash = ?, enabled = ?, description = ?, modifiedOn = ?
+                    secretHash = ?, secretEncrypted = ?, enabled = ?, description = ?, modifiedOn = ?
                 WHERE subscriptionId = ?
                 """;
     }
@@ -152,14 +152,45 @@ public class PostgreSQLSqlStatements extends CommonSqlStatements {
                 SET status = 'IN_PROGRESS', modifiedOn = CURRENT_TIMESTAMP
                 FROM (
                     SELECT deliveryId
-                    FROM webhook_deliveries
-                    WHERE status = 'PENDING' AND nextAttemptOn <= CURRENT_TIMESTAMP
-                    ORDER BY nextAttemptOn
+                    FROM webhook_deliveries wd
+                    WHERE wd.status = 'PENDING'
+                      AND wd.nextAttemptOn <= CURRENT_TIMESTAMP
+                      AND EXISTS (
+                          SELECT 1 FROM webhook_subscriptions s
+                          WHERE s.subscriptionId = wd.subscriptionId AND s.enabled = TRUE
+                      )
+                    ORDER BY wd.nextAttemptOn, wd.deliveryId
                     LIMIT ?
                     FOR UPDATE SKIP LOCKED
                 ) batch
                 WHERE d.deliveryId = batch.deliveryId
                 RETURNING d.*
+                """;
+    }
+
+    /**
+     * Reclaims stale {@code IN_PROGRESS} rows without incrementing {@code attemptCount}.
+     *
+     * @return UPDATE … RETURNING that resets status to {@code PENDING}
+     */
+    @Override
+    public String reclaimStaleWebhookDeliveries() {
+        return """
+                UPDATE webhook_deliveries d
+                SET status = 'PENDING',
+                    modifiedOn = CURRENT_TIMESTAMP,
+                    lastError = COALESCE(d.lastError, '') || ' [reclaimed from stale IN_PROGRESS]'
+                FROM (
+                    SELECT deliveryId
+                    FROM webhook_deliveries
+                    WHERE status = 'IN_PROGRESS'
+                      AND modifiedOn < ?
+                    ORDER BY modifiedOn, deliveryId
+                    LIMIT ?
+                    FOR UPDATE SKIP LOCKED
+                ) stale
+                WHERE d.deliveryId = stale.deliveryId
+                RETURNING d.deliveryId
                 """;
     }
 

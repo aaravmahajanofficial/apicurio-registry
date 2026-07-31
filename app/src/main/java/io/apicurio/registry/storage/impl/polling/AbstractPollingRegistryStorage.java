@@ -608,6 +608,12 @@ public abstract class AbstractPollingRegistryStorage<MARKER extends SourceMarker
         return proxy(storage -> storage.claimWebhookDeliveries(batchSize));
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public int reclaimStaleWebhookDeliveries(java.util.Date staleBefore, int batchSize) {
+        return proxy(storage -> storage.reclaimStaleWebhookDeliveries(staleBefore, batchSize));
+    }
+
     /**
      * {@inheritDoc}
      *

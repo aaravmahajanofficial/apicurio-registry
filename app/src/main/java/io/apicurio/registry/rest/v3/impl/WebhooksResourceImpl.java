@@ -16,6 +16,7 @@ import io.apicurio.registry.rest.v3.beans.WebhookSubscriptionSearchResults;
 import io.apicurio.registry.storage.RegistryStorage;
 import io.apicurio.registry.storage.dto.WebhookSubscriptionDto;
 import io.apicurio.registry.webhooks.WebhookEventTypes;
+import io.apicurio.registry.webhooks.WebhookSecretCipher;
 import io.apicurio.registry.webhooks.WebhookSecretUtil;
 import io.apicurio.registry.webhooks.WebhookUrlValidator;
 import io.apicurio.registry.webhooks.WebhooksConfig;
@@ -57,6 +58,9 @@ public class WebhooksResourceImpl {
     @Inject
     SecurityIdentity securityIdentity;
 
+    @Inject
+    WebhookSecretCipher secretCipher;
+
     /**
      * Creates a webhook subscription and returns the signing secret exactly once.
      *
@@ -86,7 +90,7 @@ public class WebhooksResourceImpl {
         String secret = WebhookSecretUtil.generateSecret();
         String subscriptionId = UUID.randomUUID().toString();
         WebhookSubscriptionDto dto = WebhooksApiUtil.createToDto(data, subscriptionId,
-                WebhookSecretUtil.hashSecret(secret), resolveCreatedBy());
+                WebhookSecretUtil.hashSecret(secret), secretCipher.encrypt(secret), resolveCreatedBy());
 
         storage.createWebhookSubscription(dto);
         return WebhooksApiUtil.dtoToWebhookSubscription(

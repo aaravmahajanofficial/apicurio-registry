@@ -161,7 +161,30 @@ public class SqlWebhookDeliveryRepository {
     }
 
     /**
-     * Updates delivery status, retry metadata, and timestamps after an attempt.
+     * Atomically reclaims stale {@code IN_PROGRESS} deliveries using {@code FOR UPDATE SKIP LOCKED}.
+     * <p>
+     * Does not increment {@code attemptCount}; reclaimed rows are re-queued as {@code PENDING}.
+     *
+     * @param staleBefore cutoff timestamp; rows with {@code modifiedOn} before this are reclaimed
+     * @param batchSize maximum rows to reclaim
+     * @return number of reclaimed deliveries
+     */
+    public int reclaimStaleDeliveries(Date staleBefore, int batchSize) throws RegistryStorageException {
+        if (!isPostgresql()) {
+            throw new RegistryStorageException(
+                    "Webhook stale delivery reclaim is only supported on PostgreSQL");
+        }
+        log.debug("Reclaiming stale webhook deliveries (staleBefore={}, batchSize={})", staleBefore, batchSize);
+        return handles.withHandle(handle -> handle
+                .createQuery(sqlStatements.reclaimStaleWebhookDeliveries())
+                .bind(0, toTimestamp(staleBefore))
+                .bind(1, batchSize)
+                .mapTo(Long.class)
+                .list()
+                .size());
+    }
+
+    /**
      *
      * @param delivery the delivery with updated fields
      */
