@@ -35,6 +35,7 @@ public class WebhooksSsrfTestProfile implements QuarkusTestProfile {
         props.put("apicurio.webhooks.enabled", "true");
         props.put("apicurio.webhooks.allow-insecure-urls", "false");
         props.put("apicurio.webhooks.security.block-private-ips", "true");
+        props.put("apicurio.webhooks.secrets.encryption-key", WebhooksTestSecrets.ENCRYPTION_KEY);
         return props;
     }
 

@@ -23,6 +23,7 @@ public class WebhooksRbacTestProfile implements QuarkusTestProfile {
         props.put("apicurio.features.experimental.enabled", "true");
         props.put("apicurio.webhooks.enabled", "true");
         props.put("apicurio.webhooks.allow-insecure-urls", "true");
+        props.put("apicurio.webhooks.secrets.encryption-key", WebhooksTestSecrets.ENCRYPTION_KEY);
         props.put("quarkus.oidc.tenant-enabled", "false");
         props.put("quarkus.http.auth.basic", "true");
         props.put("apicurio.auth.role-based-authorization", "true");

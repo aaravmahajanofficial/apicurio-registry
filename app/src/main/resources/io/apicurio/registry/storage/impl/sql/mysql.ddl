@@ -7,7 +7,7 @@ CREATE TABLE apicurio (
     propValue VARCHAR(255),
     PRIMARY KEY (propName)
 ) DEFAULT CHARACTER SET ascii COLLATE ascii_general_ci;
-INSERT INTO apicurio (propName, propValue) VALUES ('db_version', 108);
+INSERT INTO apicurio (propName, propValue) VALUES ('db_version', 109);
 
 CREATE TABLE sequences (
     seqName  VARCHAR(32) NOT NULL,
@@ -272,7 +272,7 @@ CREATE INDEX IDX_schema_usage_1 ON schema_usage(globalId);
 CREATE INDEX IDX_schema_usage_2 ON schema_usage(clientId);
 CREATE INDEX IDX_schema_usage_3 ON schema_usage(eventTimestamp);
 
-CREATE TABLE webhook_subscriptions (subscriptionId VARCHAR(36) NOT NULL, url VARCHAR(2048) NOT NULL, eventTypes JSON NOT NULL, groupIdFilter VARCHAR(512), artifactTypeFilter VARCHAR(64), secretHash VARCHAR(128), enabled BOOLEAN NOT NULL DEFAULT TRUE, description VARCHAR(1024), createdBy VARCHAR(256), createdOn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, modifiedOn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (subscriptionId));
+CREATE TABLE webhook_subscriptions (subscriptionId VARCHAR(36) NOT NULL, url VARCHAR(2048) NOT NULL, eventTypes JSON NOT NULL, groupIdFilter VARCHAR(512), artifactTypeFilter VARCHAR(64), secretHash VARCHAR(128), secretEncrypted VARCHAR(512), enabled BOOLEAN NOT NULL DEFAULT TRUE, description VARCHAR(1024), createdBy VARCHAR(256), createdOn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, modifiedOn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (subscriptionId));
 CREATE INDEX IDX_webhook_subs_enabled ON webhook_subscriptions(enabled);
 
 CREATE TABLE webhook_fanout (outboxEventId VARCHAR(128) NOT NULL, sourcePayload JSON NOT NULL, storageEventType VARCHAR(64) NOT NULL, fanoutStatus VARCHAR(32) NOT NULL DEFAULT 'PENDING', fanoutAttempts INT NOT NULL DEFAULT 0, lastError TEXT, createdOn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, fanoutOn TIMESTAMP, PRIMARY KEY (outboxEventId));

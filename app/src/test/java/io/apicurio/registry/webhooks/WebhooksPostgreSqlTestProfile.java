@@ -23,6 +23,7 @@ public class WebhooksPostgreSqlTestProfile implements QuarkusTestProfile {
         props.put("apicurio.webhooks.enabled", "true");
         props.put("apicurio.webhooks.allow-insecure-urls", "true");
         props.put("apicurio.webhooks.subscriptions.max-count", "100");
+        props.put("apicurio.webhooks.secrets.encryption-key", WebhooksTestSecrets.ENCRYPTION_KEY);
         return props;
     }
 

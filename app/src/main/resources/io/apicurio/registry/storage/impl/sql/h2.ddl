@@ -4,7 +4,7 @@
 
 CREATE TABLE apicurio (propName VARCHAR(255) NOT NULL, propValue VARCHAR(255));
 ALTER TABLE apicurio ADD PRIMARY KEY (propName);
-INSERT INTO apicurio (propName, propValue) VALUES ('db_version', 108);
+INSERT INTO apicurio (propName, propValue) VALUES ('db_version', 109);
 
 CREATE TABLE sequences (seqName VARCHAR(32) NOT NULL, seqValue BIGINT NOT NULL);
 ALTER TABLE sequences ADD PRIMARY KEY (seqName);
@@ -123,7 +123,7 @@ CREATE INDEX IDX_schema_usage_1 ON schema_usage(globalId);
 CREATE INDEX IDX_schema_usage_2 ON schema_usage(clientId);
 CREATE INDEX IDX_schema_usage_3 ON schema_usage(eventTimestamp);
 
-CREATE TABLE webhook_subscriptions (subscriptionId VARCHAR(36) NOT NULL, url VARCHAR(2048) NOT NULL, eventTypes JSON NOT NULL, groupIdFilter VARCHAR(512), artifactTypeFilter VARCHAR(64), secretHash VARCHAR(128), enabled BOOLEAN NOT NULL DEFAULT TRUE, description VARCHAR(1024), createdBy VARCHAR(256), createdOn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, modifiedOn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE webhook_subscriptions (subscriptionId VARCHAR(36) NOT NULL, url VARCHAR(2048) NOT NULL, eventTypes JSON NOT NULL, groupIdFilter VARCHAR(512), artifactTypeFilter VARCHAR(64), secretHash VARCHAR(128), secretEncrypted VARCHAR(512), enabled BOOLEAN NOT NULL DEFAULT TRUE, description VARCHAR(1024), createdBy VARCHAR(256), createdOn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, modifiedOn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);
 ALTER TABLE webhook_subscriptions ADD PRIMARY KEY (subscriptionId);
 CREATE INDEX IDX_webhook_subs_enabled ON webhook_subscriptions(enabled);
 
