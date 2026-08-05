@@ -48,7 +48,7 @@ public class WebhookStaleDeliveryReclaimer {
     /**
      * Reclaims deliveries stuck in {@code IN_PROGRESS} longer than {@code in-progress-timeout}.
      */
-    @Scheduled(delay = 10, concurrentExecution = SKIP, every = "{apicurio.webhooks.delivery.poll-every}")
+    @Scheduled(delay = 10, concurrentExecution = SKIP, every = "{apicurio.webhooks.delivery.poll-every:2s}")
     void reclaim() {
         if (!webhooksConfig.isOperational()) {
             return;

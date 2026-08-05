@@ -45,7 +45,7 @@ public class WebhookSecretCipher {
     private static final int KEY_LENGTH = 32;
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    @ConfigProperty(name = "apicurio.webhooks.secrets.encryption-key")
+    @ConfigProperty(name = "apicurio.webhooks.secrets.encryption-key", defaultValue = "")
     @Info(category = CATEGORY_REST, description = "Base64-encoded 256-bit AES key for encrypting webhook signing secrets at rest", availableSince = "3.3.0", experimental = true)
     String encryptionKey;
 

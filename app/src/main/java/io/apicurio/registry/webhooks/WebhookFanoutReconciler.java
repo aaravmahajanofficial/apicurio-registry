@@ -54,7 +54,7 @@ public class WebhookFanoutReconciler {
     /**
      * Polls for pending fanout rows and retries fanout from persisted payload snapshots.
      */
-    @Scheduled(delay = 5, concurrentExecution = SKIP, every = "{apicurio.webhooks.fanout.reconcile-every}")
+    @Scheduled(delay = 5, concurrentExecution = SKIP, every = "{apicurio.webhooks.fanout.reconcile-every:30s}")
     void reconcile() {
         if (!webhooksConfig.isOperational()) {
             return;

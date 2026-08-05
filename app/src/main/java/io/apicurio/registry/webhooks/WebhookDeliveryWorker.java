@@ -63,7 +63,7 @@ public class WebhookDeliveryWorker {
     /**
      * Claims and dispatches pending webhook deliveries on the configured poll interval.
      */
-    @Scheduled(delay = 5, concurrentExecution = SKIP, every = "{apicurio.webhooks.delivery.poll-every}")
+    @Scheduled(delay = 5, concurrentExecution = SKIP, every = "{apicurio.webhooks.delivery.poll-every:2s}")
     void poll() {
         if (!webhooksConfig.isOperational() || shuttingDown.get()) {
             return;

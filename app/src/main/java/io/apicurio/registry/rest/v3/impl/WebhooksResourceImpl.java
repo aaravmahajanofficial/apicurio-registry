@@ -71,7 +71,7 @@ public class WebhooksResourceImpl {
      * @throws BadRequestException if URL or event type validation fails
      */
     @Audited
-    @MethodMetadata(extractParameters = {"0"})
+    @MethodMetadata(extractParameters = {"0", "data"})
     public WebhookSubscription createWebhookSubscription(CreateWebhookSubscription data) {
         requireOperational();
         ParameterValidationUtils.requireParameter("data", data);
@@ -135,7 +135,7 @@ public class WebhooksResourceImpl {
      * @throws BadRequestException if URL or event type validation fails
      */
     @Audited
-    @MethodMetadata(extractParameters = {"0", "1"})
+    @MethodMetadata(extractParameters = {"0", "subscriptionId", "1", "data"})
     public WebhookSubscription updateWebhookSubscription(String subscriptionId,
             UpdateWebhookSubscription data) {
         requireOperational();
@@ -162,7 +162,7 @@ public class WebhooksResourceImpl {
      * @param subscriptionId the subscription identifier
      */
     @Audited
-    @MethodMetadata(extractParameters = {"0"})
+    @MethodMetadata(extractParameters = {"0", "subscriptionId"})
     public void deleteWebhookSubscription(String subscriptionId) {
         requireOperational();
         ParameterValidationUtils.requireParameter("subscriptionId", subscriptionId);
