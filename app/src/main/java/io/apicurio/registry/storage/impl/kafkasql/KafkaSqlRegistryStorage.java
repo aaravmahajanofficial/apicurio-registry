@@ -778,6 +778,143 @@ public class KafkaSqlRegistryStorage extends ReadOnlyDelegatingStorage implement
         return sqlStore.getContractAuditLog(groupId, artifactId, offset, limit);
     }
 
+    // ========== Webhook notifications (delegated to SQL snapshot store) ==========
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean supportsWebhooks() {
+        return sqlStore.supportsWebhooks();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void createWebhookSubscription(WebhookSubscriptionDto subscription)
+            throws RegistryStorageException {
+        sqlStore.createWebhookSubscription(subscription);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public WebhookSubscriptionDto getWebhookSubscription(
+            String subscriptionId) throws RegistryStorageException {
+        return sqlStore.getWebhookSubscription(subscriptionId);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void updateWebhookSubscription(WebhookSubscriptionDto subscription)
+            throws RegistryStorageException {
+        sqlStore.updateWebhookSubscription(subscription);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void deleteWebhookSubscription(String subscriptionId) throws RegistryStorageException {
+        sqlStore.deleteWebhookSubscription(subscriptionId);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public java.util.List<WebhookSubscriptionDto> listWebhookSubscriptions(
+            int offset, int limit) throws RegistryStorageException {
+        return sqlStore.listWebhookSubscriptions(offset, limit);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public long countWebhookSubscriptions() throws RegistryStorageException {
+        return sqlStore.countWebhookSubscriptions();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public java.util.List<WebhookSubscriptionDto> getEnabledWebhookSubscriptions()
+            throws RegistryStorageException {
+        return sqlStore.getEnabledWebhookSubscriptions();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void insertWebhookFanout(io.apicurio.registry.storage.dto.WebhookFanoutDto fanout)
+            throws RegistryStorageException {
+        sqlStore.insertWebhookFanout(fanout);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void updateWebhookFanoutStatus(io.apicurio.registry.storage.dto.WebhookFanoutDto fanout)
+            throws RegistryStorageException {
+        sqlStore.updateWebhookFanoutStatus(fanout);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public java.util.List<io.apicurio.registry.storage.dto.WebhookFanoutDto> getPendingWebhookFanouts(
+            int maxAttempts, int limit) throws RegistryStorageException {
+        return sqlStore.getPendingWebhookFanouts(maxAttempts, limit);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public long insertWebhookDelivery(io.apicurio.registry.storage.dto.WebhookDeliveryDto delivery)
+            throws RegistryStorageException {
+        return sqlStore.insertWebhookDelivery(delivery);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public java.util.List<io.apicurio.registry.storage.dto.WebhookDeliveryDto> claimWebhookDeliveries(
+            int batchSize) throws RegistryStorageException {
+        return sqlStore.claimWebhookDeliveries(batchSize);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public int reclaimStaleWebhookDeliveries(java.util.Date staleBefore, int batchSize)
+            throws RegistryStorageException {
+        return sqlStore.reclaimStaleWebhookDeliveries(staleBefore, batchSize);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void updateWebhookDelivery(io.apicurio.registry.storage.dto.WebhookDeliveryDto delivery)
+            throws RegistryStorageException {
+        sqlStore.updateWebhookDelivery(delivery);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public java.util.List<io.apicurio.registry.storage.dto.WebhookDeliveryDto> getWebhookDeliveries(
+            String subscriptionId, int offset, int limit) throws RegistryStorageException {
+        return sqlStore.getWebhookDeliveries(subscriptionId, offset, limit);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public long countWebhookDeliveries(String subscriptionId) throws RegistryStorageException {
+        return sqlStore.countWebhookDeliveries(subscriptionId);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void insertWebhookDeliveryLog(io.apicurio.registry.storage.dto.WebhookDeliveryLogDto log)
+            throws RegistryStorageException {
+        sqlStore.insertWebhookDeliveryLog(log);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public java.util.List<io.apicurio.registry.storage.dto.WebhookDeliveryLogDto> getWebhookDeliveryLog(
+            String subscriptionId, int offset, int limit) throws RegistryStorageException {
+        return sqlStore.getWebhookDeliveryLog(subscriptionId, offset, limit);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void deleteOldWebhookDeliveryLogs(long cutoffTimestamp) throws RegistryStorageException {
+        sqlStore.deleteOldWebhookDeliveryLogs(cutoffTimestamp);
+    }
+
     /**
      * @see io.apicurio.registry.storage.RegistryStorage#deleteArtifactVersion(java.lang.String,
      *      java.lang.String, java.lang.String)

@@ -171,4 +171,9 @@ public class SQLServerSqlStatements extends CommonSqlStatements {
         // Wrap in DECLARE/SELECT to return result set instead of return code
         return "DECLARE @result INT; EXEC @result = sp_releaseapplock @Resource='apicurio_init_lock', @LockOwner='Session'; SELECT @result";
     }
+
+    @Override
+    public String selectEnabledWebhookSubscriptions() {
+        return "SELECT * FROM webhook_subscriptions WHERE enabled = 1 ORDER BY createdOn";
+    }
 }

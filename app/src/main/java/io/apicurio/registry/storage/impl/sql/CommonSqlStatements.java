@@ -1593,4 +1593,159 @@ public abstract class CommonSqlStatements implements SqlStatements {
     public String deleteAllContractAuditEntries() {
         return "DELETE FROM contract_audit_log";
     }
+
+    @Override
+    public String insertWebhookSubscription() {
+        return """
+                INSERT INTO webhook_subscriptions
+                (subscriptionId, url, eventTypes, groupIdFilter, artifactTypeFilter, secretHash,
+                 secretEncrypted, enabled, description, createdBy, createdOn, modifiedOn)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """;
+    }
+
+    @Override
+    public String updateWebhookSubscription() {
+        return """
+                UPDATE webhook_subscriptions
+                SET url = ?, eventTypes = ?, groupIdFilter = ?, artifactTypeFilter = ?, secretHash = ?,
+                    secretEncrypted = ?, enabled = ?, description = ?, modifiedOn = ?
+                WHERE subscriptionId = ?
+                """;
+    }
+
+    @Override
+    public String deleteWebhookSubscription() {
+        return "DELETE FROM webhook_subscriptions WHERE subscriptionId = ?";
+    }
+
+    @Override
+    public String selectWebhookSubscriptionById() {
+        return "SELECT * FROM webhook_subscriptions WHERE subscriptionId = ?";
+    }
+
+    @Override
+    public String selectWebhookSubscriptions() {
+        return "SELECT * FROM webhook_subscriptions ORDER BY createdOn DESC";
+    }
+
+    @Override
+    public String selectEnabledWebhookSubscriptions() {
+        return "SELECT * FROM webhook_subscriptions WHERE enabled = TRUE ORDER BY createdOn";
+    }
+
+    @Override
+    public String countWebhookSubscriptions() {
+        return "SELECT COUNT(*) FROM webhook_subscriptions";
+    }
+
+    @Override
+    public String insertWebhookFanout() {
+        return """
+                INSERT INTO webhook_fanout
+                (outboxEventId, sourcePayload, storageEventType, fanoutStatus, fanoutAttempts,
+                 lastError, createdOn, fanoutOn)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """;
+    }
+
+    @Override
+    public String updateWebhookFanoutStatus() {
+        return """
+                UPDATE webhook_fanout
+                SET fanoutStatus = ?, fanoutAttempts = ?, lastError = ?, fanoutOn = ?
+                WHERE outboxEventId = ?
+                """;
+    }
+
+    @Override
+    public String selectPendingWebhookFanouts() {
+        return """
+                SELECT * FROM webhook_fanout
+                WHERE fanoutStatus IN ('PENDING', 'FAILED') AND fanoutAttempts < ?
+                ORDER BY createdOn
+                LIMIT ?
+                """;
+    }
+
+    @Override
+    public String insertWebhookDelivery() {
+        return """
+                INSERT INTO webhook_deliveries
+                (subscriptionId, cloudEventId, eventType, payload, status, attemptCount,
+                 nextAttemptOn, lastError, createdOn, modifiedOn)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """;
+    }
+
+    /**
+     * Not supported on non-PostgreSQL dialects; use {@link PostgreSQLSqlStatements#claimWebhookDeliveries()}.
+     *
+     * @throws UnsupportedOperationException always
+     */
+    @Override
+    public String claimWebhookDeliveries() {
+        throw new UnsupportedOperationException(
+                "Webhook delivery claim is only supported on PostgreSQL");
+    }
+
+    /**
+     * Not supported on non-PostgreSQL dialects; use {@link PostgreSQLSqlStatements#reclaimStaleWebhookDeliveries()}.
+     *
+     * @throws UnsupportedOperationException always
+     */
+    @Override
+    public String reclaimStaleWebhookDeliveries() {
+        throw new UnsupportedOperationException(
+                "Webhook stale delivery reclaim is only supported on PostgreSQL");
+    }
+
+    @Override
+    public String updateWebhookDelivery() {
+        return """
+                UPDATE webhook_deliveries
+                SET status = ?, attemptCount = ?, nextAttemptOn = ?, lastError = ?, modifiedOn = ?
+                WHERE deliveryId = ?
+                """;
+    }
+
+    @Override
+    public String selectWebhookDeliveriesBySubscription() {
+        return """
+                SELECT * FROM webhook_deliveries
+                WHERE subscriptionId = ?
+                ORDER BY createdOn DESC
+                LIMIT ? OFFSET ?
+                """;
+    }
+
+    @Override
+    public String countWebhookDeliveriesBySubscription() {
+        return "SELECT COUNT(*) FROM webhook_deliveries WHERE subscriptionId = ?";
+    }
+
+    @Override
+    public String insertWebhookDeliveryLog() {
+        return """
+                INSERT INTO webhook_delivery_log
+                (deliveryId, subscriptionId, cloudEventId, attemptNumber, httpStatus, durationMs,
+                 error, attemptedOn)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """;
+    }
+
+    @Override
+    public String selectWebhookDeliveryLogBySubscription() {
+        return """
+                SELECT * FROM webhook_delivery_log
+                WHERE subscriptionId = ?
+                ORDER BY attemptedOn DESC
+                LIMIT ? OFFSET ?
+                """;
+    }
+
+    @Override
+    public String deleteOldWebhookDeliveryLogs() {
+        return "DELETE FROM webhook_delivery_log WHERE attemptedOn < ?";
+    }
 }

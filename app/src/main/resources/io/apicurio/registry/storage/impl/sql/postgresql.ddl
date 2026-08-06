@@ -4,7 +4,7 @@
 
 CREATE TABLE apicurio (propName VARCHAR(255) NOT NULL, propValue VARCHAR(255));
 ALTER TABLE apicurio ADD PRIMARY KEY (propName);
-INSERT INTO apicurio (propName, propValue) VALUES ('db_version', 109);
+INSERT INTO apicurio (propName, propValue) VALUES ('db_version', 110);
 
 CREATE TABLE sequences (seqName VARCHAR(32) NOT NULL, seqValue BIGINT NOT NULL);
 ALTER TABLE sequences ADD PRIMARY KEY (seqName);
@@ -125,4 +125,22 @@ CREATE TABLE schema_usage (globalId BIGINT NOT NULL, contentId BIGINT NOT NULL D
 CREATE INDEX IDX_schema_usage_1 ON schema_usage(globalId);
 CREATE INDEX IDX_schema_usage_2 ON schema_usage(clientId);
 CREATE INDEX IDX_schema_usage_3 ON schema_usage(eventTimestamp);
+
+CREATE TABLE webhook_subscriptions (subscriptionId VARCHAR(36) NOT NULL, url VARCHAR(2048) NOT NULL, eventTypes JSONB NOT NULL, groupIdFilter VARCHAR(512), artifactTypeFilter VARCHAR(64), secretHash VARCHAR(128), secretEncrypted VARCHAR(512), enabled BOOLEAN NOT NULL DEFAULT TRUE, description VARCHAR(1024), createdBy VARCHAR(256), createdOn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, modifiedOn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);
+ALTER TABLE webhook_subscriptions ADD PRIMARY KEY (subscriptionId);
+CREATE INDEX IDX_webhook_subs_enabled ON webhook_subscriptions(enabled);
+
+CREATE TABLE webhook_fanout (outboxEventId VARCHAR(128) NOT NULL, sourcePayload JSONB NOT NULL, storageEventType VARCHAR(64) NOT NULL, fanoutStatus VARCHAR(32) NOT NULL DEFAULT 'PENDING', fanoutAttempts INT NOT NULL DEFAULT 0, lastError TEXT, createdOn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, fanoutOn TIMESTAMP);
+ALTER TABLE webhook_fanout ADD PRIMARY KEY (outboxEventId);
+CREATE INDEX IDX_webhook_fanout_pending ON webhook_fanout(fanoutStatus, createdOn) WHERE fanoutStatus IN ('PENDING', 'FAILED');
+
+CREATE TABLE webhook_deliveries (deliveryId BIGSERIAL NOT NULL, subscriptionId VARCHAR(36) NOT NULL, cloudEventId VARCHAR(36) NOT NULL, eventType VARCHAR(128) NOT NULL, payload JSONB NOT NULL, status VARCHAR(32) NOT NULL DEFAULT 'PENDING', attemptCount INT NOT NULL DEFAULT 0, nextAttemptOn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, lastError TEXT, createdOn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, modifiedOn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);
+ALTER TABLE webhook_deliveries ADD PRIMARY KEY (deliveryId);
+ALTER TABLE webhook_deliveries ADD CONSTRAINT FK_webhook_del_sub FOREIGN KEY (subscriptionId) REFERENCES webhook_subscriptions(subscriptionId) ON DELETE CASCADE;
+CREATE UNIQUE INDEX UQ_webhook_del_event ON webhook_deliveries(subscriptionId, cloudEventId);
+CREATE INDEX IDX_webhook_del_poll ON webhook_deliveries(status, nextAttemptOn) WHERE status IN ('PENDING', 'IN_PROGRESS');
+
+CREATE TABLE webhook_delivery_log (logId BIGSERIAL NOT NULL, deliveryId BIGINT NOT NULL, subscriptionId VARCHAR(36) NOT NULL, cloudEventId VARCHAR(36) NOT NULL, attemptNumber INT NOT NULL, httpStatus INT, durationMs INT, error TEXT, attemptedOn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);
+ALTER TABLE webhook_delivery_log ADD PRIMARY KEY (logId);
+CREATE INDEX IDX_webhook_log_sub ON webhook_delivery_log(subscriptionId, attemptedOn DESC);
 

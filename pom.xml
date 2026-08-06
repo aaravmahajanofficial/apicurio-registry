@@ -1047,6 +1047,9 @@
           <version>${version.failsafe.plugin}</version>
           <configuration>
             <rerunFailingTestsCount>${failsafe.rerunFailingTestsCount}</rerunFailingTestsCount>
+            <systemPropertyVariables>
+              <user.timezone>UTC</user.timezone>
+            </systemPropertyVariables>
           </configuration>
         </plugin>
         <plugin>
@@ -1055,6 +1058,9 @@
           <version>${version.surefire.plugin}</version>
           <configuration>
             <rerunFailingTestsCount>${surefire.rerunFailingTestsCount}</rerunFailingTestsCount>
+            <systemPropertyVariables>
+              <user.timezone>UTC</user.timezone>
+            </systemPropertyVariables>
           </configuration>
         </plugin>
         <plugin>

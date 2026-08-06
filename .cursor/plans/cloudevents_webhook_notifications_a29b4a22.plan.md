@@ -425,7 +425,7 @@ sequenceDiagram
     participant Guard as schema-guard-service
 
     Worker->>PG: SELECT deliveries FOR UPDATE SKIP LOCKED
-    Note over Worker,PG: Only registry-2 claims this row; registry-1 and registry-3 skip it
+    Note over Worker,PG: Only registry-2 claims this row, registry-1 and registry-3 skip it
     Worker->>PG: UPDATE status IN_PROGRESS
     Worker->>Signer: HMAC-SHA256 body + timestamp
     Worker->>Http: POST application/cloudevents+json
