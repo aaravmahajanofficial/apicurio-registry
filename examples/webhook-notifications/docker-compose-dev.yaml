@@ -1,0 +1,50 @@
+# Webhook notifications — local development infrastructure
+#
+# Run the registry from source (quarkus:dev), not the snapshot Docker image.
+# See README.md for full setup steps.
+#
+# Endpoints:
+#   - Registry API (quarkus:dev):  http://localhost:8080/apis/registry/v3
+#   - Registry UI:                 http://localhost:8889
+#   - Mock webhook (WireMock):       http://localhost:9999/hook
+#   - PostgreSQL:                  localhost:5432 (registrydb / pguser / pgpass)
+
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: apicurio-webhooks-dev-db
+    environment:
+      POSTGRES_USER: pguser
+      POSTGRES_PASSWORD: pgpass
+      POSTGRES_DB: registrydb
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pguser -d registrydb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  wiremock:
+    image: wiremock/wiremock:3.9.1
+    container_name: apicurio-webhooks-dev-wiremock
+    ports:
+      - "9999:8080"
+    command: ["--verbose"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/__admin/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  registry-ui:
+    image: quay.io/apicurio/apicurio-registry-ui:latest-snapshot
+    container_name: apicurio-webhooks-dev-ui
+    environment:
+      REGISTRY_API_URL: "http://localhost:8080/apis/registry/v3"
+    ports:
+      - "8889:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy

@@ -65,4 +65,23 @@ public interface MetricsConstants {
     String ICEBERG_TAG_RESULT = "result";
     String ICEBERG_TAG_ENTITY_TYPE = "entity_type";
     String ICEBERG_TAG_ERROR_TYPE = "error_type";
+
+    // Webhooks
+
+    String WEBHOOK_PREFIX = "webhook.";
+    String WEBHOOK_DELIVERY_TOTAL = WEBHOOK_PREFIX + "delivery.total";
+    String WEBHOOK_DELIVERY_TOTAL_DESCRIPTION = "Webhook delivery outcomes by terminal status";
+    String WEBHOOK_DELIVERY_DURATION = WEBHOOK_PREFIX + "delivery.duration";
+    String WEBHOOK_DELIVERY_DURATION_DESCRIPTION = "Duration of webhook HTTP delivery attempts";
+    String WEBHOOK_QUEUE_DEPTH = WEBHOOK_PREFIX + "queue.depth";
+    String WEBHOOK_QUEUE_DEPTH_DESCRIPTION = "Number of webhook deliveries pending or in progress";
+    String WEBHOOK_RETRY_TOTAL = WEBHOOK_PREFIX + "retry.total";
+    String WEBHOOK_RETRY_TOTAL_DESCRIPTION = "Webhook delivery retries after the first attempt";
+    String WEBHOOK_SUBSCRIPTION_AUTO_DISABLED = WEBHOOK_PREFIX + "subscription.auto_disabled.total";
+    String WEBHOOK_SUBSCRIPTION_AUTO_DISABLED_DESCRIPTION =
+            "Webhook subscriptions auto-disabled after consecutive delivery failures";
+
+    // Webhook tags/labels
+
+    String WEBHOOK_TAG_STATUS = "status";
 }
