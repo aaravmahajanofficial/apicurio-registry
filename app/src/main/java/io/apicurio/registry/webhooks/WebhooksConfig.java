@@ -110,6 +110,10 @@ public class WebhooksConfig {
     @Info(category = CATEGORY_REST, description = "Retention period for webhook delivery audit logs", availableSince = "3.3.0", experimental = true)
     String logRetention;
 
+    @ConfigProperty(name = "apicurio.webhooks.log.reaper.every", defaultValue = "6h")
+    @Info(category = CATEGORY_REST, description = "How often the webhook delivery log reaper runs", availableSince = "3.3.0", experimental = true)
+    String logReaperEvery;
+
     @ConfigProperty(name = "apicurio.webhooks.payload.max-bytes", defaultValue = "262144")
     @Info(category = CATEGORY_REST, description = "Maximum CloudEvent payload size in bytes before truncation", availableSince = "3.3.0", experimental = true)
     int payloadMaxBytes;
@@ -263,6 +267,13 @@ public class WebhooksConfig {
      */
     public String getLogRetention() {
         return logRetention;
+    }
+
+    /**
+     * @return how often the delivery log reaper runs
+     */
+    public String getLogReaperEvery() {
+        return logReaperEvery;
     }
 
     /**

@@ -55,6 +55,9 @@ public class WebhookDeliveryWorker {
     @Inject
     WebhookDeliveryService deliveryService;
 
+    @Inject
+    WebhookMetricsService metrics;
+
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
     private final AtomicInteger globalInFlight = new AtomicInteger(0);
     private final Map<String, AtomicInteger> inflightBySubscription = new ConcurrentHashMap<>();
@@ -110,6 +113,16 @@ public class WebhookDeliveryWorker {
             }
         } catch (Exception ex) {
             log.error("Webhook delivery worker poll failed", ex);
+        } finally {
+            updateQueueDepthMetric();
+        }
+    }
+
+    private void updateQueueDepthMetric() {
+        try {
+            metrics.updateQueueDepth(storage.countPendingWebhookDeliveries());
+        } catch (Exception ex) {
+            log.debug("Failed to update webhook queue depth metric", ex);
         }
     }
 

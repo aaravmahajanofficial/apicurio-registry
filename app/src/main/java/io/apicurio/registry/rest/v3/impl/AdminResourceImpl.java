@@ -43,6 +43,7 @@ import io.apicurio.registry.rest.v3.beans.UpdateConfigurationProperty;
 import io.apicurio.registry.rest.v3.beans.UpdateRole;
 import io.apicurio.registry.rest.v3.beans.CreateWebhookSubscription;
 import io.apicurio.registry.rest.v3.beans.UpdateWebhookSubscription;
+import io.apicurio.registry.rest.v3.beans.WebhookDelivery;
 import io.apicurio.registry.rest.v3.beans.WebhookDeliverySearchResults;
 import io.apicurio.registry.rest.v3.beans.WebhookSubscription;
 import io.apicurio.registry.rest.v3.beans.WebhookSubscriptionSearchResults;
@@ -985,6 +986,17 @@ public class AdminResourceImpl implements AdminResource {
     public WebhookDeliverySearchResults listWebhookDeliveries(String subscriptionId, BigInteger limit,
             BigInteger offset) {
         return webhooksResource.listWebhookDeliveries(subscriptionId, limit, offset);
+    }
+
+    /**
+     * @see io.apicurio.registry.rest.v3.AdminResource#replayWebhookDelivery(java.lang.String,
+     *      java.lang.Long)
+     */
+    @Override
+    @Audited
+    @Authorized(style = AuthorizedStyle.None, level = AuthorizedLevel.Admin)
+    public WebhookDelivery replayWebhookDelivery(String subscriptionId, Long deliveryId) {
+        return webhooksResource.replayWebhookDelivery(subscriptionId, deliveryId);
     }
 
 }

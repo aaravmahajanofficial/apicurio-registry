@@ -4,6 +4,7 @@ import io.apicurio.registry.storage.dto.WebhookDeliveryDto;
 import io.apicurio.registry.storage.dto.WebhookDeliveryLogDto;
 import io.apicurio.registry.storage.dto.WebhookFanoutDto;
 import io.apicurio.registry.storage.error.RegistryStorageException;
+import io.apicurio.registry.storage.error.WebhookDeliveryNotFoundException;
 import io.apicurio.registry.storage.impl.sql.HandleFactory;
 import io.apicurio.registry.storage.impl.sql.SqlStatements;
 import io.apicurio.registry.storage.impl.sql.jdb.HandleAction;
@@ -15,6 +16,7 @@ import org.slf4j.Logger;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * SQL repository for webhook fanout, delivery queue, and delivery audit log tables.
@@ -228,6 +230,32 @@ public class SqlWebhookDeliveryRepository {
         return handles.withHandle(handle -> handle
                 .createQuery(sqlStatements.countWebhookDeliveriesBySubscription())
                 .bind(0, subscriptionId)
+                .mapTo(Long.class)
+                .one());
+    }
+
+    /**
+     * @param deliveryId the delivery identifier
+     * @return the delivery row
+     * @throws WebhookDeliveryNotFoundException if not found
+     */
+    public WebhookDeliveryDto getDeliveryById(long deliveryId) throws RegistryStorageException {
+        return handles.withHandle(handle -> {
+            Optional<WebhookDeliveryDto> result = handle
+                    .createQuery(sqlStatements.selectWebhookDeliveryById())
+                    .bind(0, deliveryId)
+                    .map(WebhookDeliveryDtoMapper.instance)
+                    .findOne();
+            return result.orElseThrow(() -> new WebhookDeliveryNotFoundException(deliveryId));
+        });
+    }
+
+    /**
+     * @return count of deliveries waiting to be processed or currently in progress
+     */
+    public long countPendingDeliveries() throws RegistryStorageException {
+        return handles.withHandle(handle -> handle
+                .createQuery(sqlStatements.countPendingWebhookDeliveries())
                 .mapTo(Long.class)
                 .one());
     }

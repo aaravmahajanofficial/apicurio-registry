@@ -3210,6 +3210,69 @@
         }
       ]
     },
+    "/admin/webhooks/subscriptions/{subscriptionId}/deliveries/{deliveryId}/replay": {
+      "summary": "Replay a dead-letter webhook delivery.",
+      "post": {
+        "tags": [
+          "Webhooks",
+          "Admin"
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDelivery"
+                }
+              }
+            },
+            "description": "The delivery was reset to pending for retry."
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "operationId": "replayWebhookDelivery",
+        "summary": "Replay webhook delivery",
+        "description": "**Experimental.** Resets a dead-letter webhook delivery for retry by setting `attemptCount=0`, `status=PENDING`, and `nextAttemptOn=now`.\n"
+      },
+      "parameters": [
+        {
+          "name": "subscriptionId",
+          "description": "The webhook subscription ID.",
+          "schema": {
+            "type": "string"
+          },
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "deliveryId",
+          "description": "The webhook delivery ID.",
+          "schema": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
     "/admin/config/artifactTypes": {
       "summary": "The list of artifact types supported by this instance of Registry.",
       "get": {

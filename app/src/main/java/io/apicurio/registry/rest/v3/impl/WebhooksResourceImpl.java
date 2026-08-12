@@ -10,11 +10,15 @@ import io.apicurio.registry.rest.MethodMetadata;
 import io.apicurio.registry.rest.ParameterValidationUtils;
 import io.apicurio.registry.rest.v3.beans.CreateWebhookSubscription;
 import io.apicurio.registry.rest.v3.beans.UpdateWebhookSubscription;
+import io.apicurio.registry.rest.v3.beans.WebhookDelivery;
 import io.apicurio.registry.rest.v3.beans.WebhookDeliverySearchResults;
 import io.apicurio.registry.rest.v3.beans.WebhookSubscription;
 import io.apicurio.registry.rest.v3.beans.WebhookSubscriptionSearchResults;
 import io.apicurio.registry.storage.RegistryStorage;
+import io.apicurio.registry.storage.dto.WebhookDeliveryDto;
 import io.apicurio.registry.storage.dto.WebhookSubscriptionDto;
+import io.apicurio.registry.storage.error.WebhookDeliveryNotFoundException;
+import io.apicurio.registry.webhooks.WebhookDeliveryStatuses;
 import io.apicurio.registry.webhooks.WebhookEventTypes;
 import io.apicurio.registry.webhooks.WebhookSecretCipher;
 import io.apicurio.registry.webhooks.WebhookSecretUtil;
@@ -28,6 +32,7 @@ import io.quarkus.security.identity.SecurityIdentity;
 import org.slf4j.Logger;
 
 import java.math.BigInteger;
+import java.util.Date;
 import java.util.UUID;
 
 /**
@@ -188,6 +193,42 @@ public class WebhooksResourceImpl {
         return WebhooksApiUtil.toDeliverySearchResults(
                 storage.getWebhookDeliveries(subscriptionId, resolvedOffset, resolvedLimit),
                 storage.countWebhookDeliveries(subscriptionId));
+    }
+
+    /**
+     * Replays a dead-letter delivery by resetting it to {@code PENDING} with {@code attemptCount=0}.
+     *
+     * @param subscriptionId the parent subscription identifier
+     * @param deliveryId the delivery to replay
+     * @return the updated delivery record
+     * @throws BadRequestException if the delivery is not in {@code DEAD_LETTER} status
+     * @throws WebhookDeliveryNotFoundException if the delivery does not exist or belongs to another
+     *         subscription
+     */
+    @Audited
+    @MethodMetadata(extractParameters = {"0", "subscriptionId", "1", "deliveryId"})
+    public WebhookDelivery replayWebhookDelivery(String subscriptionId, Long deliveryId) {
+        requireOperational();
+        ParameterValidationUtils.requireParameter("subscriptionId", subscriptionId);
+        ParameterValidationUtils.requireParameter("deliveryId", deliveryId);
+        storage.getWebhookSubscription(subscriptionId);
+
+        WebhookDeliveryDto delivery = storage.getWebhookDelivery(deliveryId);
+        if (!delivery.getSubscriptionId().equals(subscriptionId)) {
+            throw new WebhookDeliveryNotFoundException(deliveryId);
+        }
+        if (!WebhookDeliveryStatuses.DEAD_LETTER.equals(delivery.getStatus())) {
+            throw new BadRequestException(
+                    "Only dead-letter webhook deliveries can be replayed. Current status: "
+                            + delivery.getStatus());
+        }
+
+        delivery.setAttemptCount(0);
+        delivery.setStatus(WebhookDeliveryStatuses.PENDING);
+        delivery.setNextAttemptOn(new Date());
+        delivery.setLastError(null);
+        storage.updateWebhookDelivery(delivery);
+        return WebhooksApiUtil.dtoToWebhookDelivery(delivery);
     }
 
     /**

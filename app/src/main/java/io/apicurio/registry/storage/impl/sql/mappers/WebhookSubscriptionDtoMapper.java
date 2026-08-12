@@ -36,6 +36,7 @@ public class WebhookSubscriptionDtoMapper implements RowMapper<io.apicurio.regis
         dto.setSecretHash(rs.getString("secretHash"));
         dto.setSecretEncrypted(rs.getString("secretEncrypted"));
         dto.setEnabled(rs.getBoolean("enabled"));
+        dto.setConsecutiveDeliveryFailures(rs.getInt("consecutiveDeliveryFailures"));
         dto.setDescription(rs.getString("description"));
         dto.setCreatedBy(rs.getString("createdBy"));
         dto.setCreatedOn(rs.getTimestamp("createdOn"));

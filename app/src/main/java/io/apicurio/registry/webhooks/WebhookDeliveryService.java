@@ -52,6 +52,12 @@ public class WebhookDeliveryService {
     @Inject
     WebhookDeliveryBackoff backoff;
 
+    @Inject
+    WebhookMetricsService metrics;
+
+    @Inject
+    WebhookSubscriptionHealthService subscriptionHealth;
+
     /**
      * Delivers a claimed webhook row and updates persistence on completion.
      * <p>
@@ -111,6 +117,8 @@ public class WebhookDeliveryService {
                     .durationMs((int) Math.min(durationMs, Integer.MAX_VALUE))
                     .attemptedOn(new java.util.Date())
                     .build());
+            metrics.recordDeliveryAttempt(delivery.getStatus(), durationMs, attemptNumber);
+            subscriptionHealth.onDeliverySucceeded(delivery.getSubscriptionId());
         } catch (Exception ex) {
             log.error("Failed to persist successful webhook delivery deliveryId={}",
                     delivery.getDeliveryId(), ex);
@@ -142,6 +150,10 @@ public class WebhookDeliveryService {
                     .error(error)
                     .attemptedOn(new java.util.Date())
                     .build());
+            metrics.recordDeliveryAttempt(delivery.getStatus(), durationMs, attemptNumber);
+            if (WebhookDeliveryStatuses.DEAD_LETTER.equals(delivery.getStatus())) {
+                subscriptionHealth.onDeliveryDeadLetter(delivery.getSubscriptionId());
+            }
         } catch (Exception ex) {
             log.error("Failed to persist failed webhook delivery deliveryId={}",
                     delivery.getDeliveryId(), ex);

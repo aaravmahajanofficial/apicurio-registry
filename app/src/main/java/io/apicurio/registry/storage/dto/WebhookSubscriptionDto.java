@@ -37,6 +37,7 @@ public class WebhookSubscriptionDto {
     private String secretHash;
     private String secretEncrypted;
     private boolean enabled;
+    private int consecutiveDeliveryFailures;
     private String description;
     private String createdBy;
     private Date createdOn;

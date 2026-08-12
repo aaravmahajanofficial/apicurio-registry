@@ -667,6 +667,18 @@ public abstract class AbstractPollingRegistryStorage<MARKER extends SourceMarker
                 "Webhook writes are not supported in read-only storage");
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public io.apicurio.registry.storage.dto.WebhookDeliveryDto getWebhookDelivery(long deliveryId) {
+        return proxy(storage -> storage.getWebhookDelivery(deliveryId));
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public long countPendingWebhookDeliveries() {
+        return proxy(storage -> storage.countPendingWebhookDeliveries());
+    }
+
     @Override
     public List<String> getArtifactVersions(String groupId, String artifactId) {
         return proxy(storage -> storage.getArtifactVersions(groupId, artifactId));

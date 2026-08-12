@@ -1876,6 +1876,18 @@ public abstract class AbstractSqlRegistryStorage implements RegistryStorage {
         webhookDeliveryRepository.deleteOldDeliveryLogs(cutoffTimestamp);
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public WebhookDeliveryDto getWebhookDelivery(long deliveryId) throws RegistryStorageException {
+        return webhookDeliveryRepository.getDeliveryById(deliveryId);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public long countPendingWebhookDeliveries() throws RegistryStorageException {
+        return webhookDeliveryRepository.countPendingDeliveries();
+    }
+
     @Override
     public void deleteOldUsageEvents(long cutoffTimestamp) {
         usageRepository.deleteOldUsageEvents(cutoffTimestamp);

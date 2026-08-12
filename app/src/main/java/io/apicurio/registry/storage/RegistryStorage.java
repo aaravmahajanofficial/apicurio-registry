@@ -1407,6 +1407,21 @@ public interface RegistryStorage extends DynamicConfigStorage {
     }
 
     /**
+     * @param deliveryId the delivery identifier
+     * @return the delivery row
+     */
+    default WebhookDeliveryDto getWebhookDelivery(long deliveryId) throws RegistryStorageException {
+        throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
+    }
+
+    /**
+     * @return count of {@code PENDING} and {@code IN_PROGRESS} webhook deliveries
+     */
+    default long countPendingWebhookDeliveries() throws RegistryStorageException {
+        throw new RegistryStorageException("Webhooks are not supported by this storage implementation");
+    }
+
+    /**
      * Records a single schema usage event.
      */
     void recordUsageEvent(SchemaUsageEventDto event);

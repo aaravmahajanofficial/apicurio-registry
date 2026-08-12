@@ -7,6 +7,7 @@ import io.apicurio.registry.storage.dto.WebhookDeliveryLogDto;
 import io.apicurio.registry.storage.dto.WebhookFanoutDto;
 import io.apicurio.registry.storage.dto.WebhookSubscriptionDto;
 import io.apicurio.registry.storage.error.WebhookSubscriptionNotFoundException;
+import io.apicurio.registry.webhooks.WebhookDeliveryStatuses;
 import io.apicurio.registry.storage.util.PostgresqlTestProfile;
 import io.apicurio.registry.utils.tests.ApicurioTestTags;
 import io.quarkus.test.junit.QuarkusTest;
@@ -139,6 +140,65 @@ public class WebhookRepositoryPostgreSqlTest {
                 .build());
 
         assertEquals(1, storage.getWebhookDeliveryLog(subscriptionId, 0, 10).size());
+
+        storage.deleteWebhookSubscription(subscriptionId);
+    }
+
+    /** Verifies delivery lookup, pending queue depth, replay reset, log purge, and failure tracking. */
+    @Test
+    public void testWebhookDeliveryReplayAndMonitoring() {
+        String subscriptionId = UUID.randomUUID().toString();
+        storage.createWebhookSubscription(WebhookSubscriptionDto.builder()
+                .subscriptionId(subscriptionId)
+                .url("https://example.com/hook")
+                .eventTypes(List.of("io.apicurio.registry.artifact.created.v1"))
+                .enabled(true)
+                .build());
+
+        String cloudEventId = UUID.randomUUID().toString();
+        long deliveryId = storage.insertWebhookDelivery(WebhookDeliveryDto.builder()
+                .subscriptionId(subscriptionId)
+                .cloudEventId(cloudEventId)
+                .eventType("io.apicurio.registry.artifact.created.v1")
+                .payload("{\"id\":\"" + cloudEventId + "\"}")
+                .status(WebhookDeliveryStatuses.DEAD_LETTER)
+                .attemptCount(10)
+                .nextAttemptOn(new Date())
+                .lastError("upstream timeout")
+                .build());
+
+        WebhookDeliveryDto fetched = storage.getWebhookDelivery(deliveryId);
+        assertEquals(WebhookDeliveryStatuses.DEAD_LETTER, fetched.getStatus());
+        assertEquals(0, storage.countPendingWebhookDeliveries());
+
+        fetched.setAttemptCount(0);
+        fetched.setStatus(WebhookDeliveryStatuses.PENDING);
+        fetched.setNextAttemptOn(new Date());
+        fetched.setLastError(null);
+        storage.updateWebhookDelivery(fetched);
+
+        WebhookDeliveryDto replayed = storage.getWebhookDelivery(deliveryId);
+        assertEquals(WebhookDeliveryStatuses.PENDING, replayed.getStatus());
+        assertEquals(0, replayed.getAttemptCount());
+        assertEquals(1, storage.countPendingWebhookDeliveries());
+
+        WebhookSubscriptionDto subscription = storage.getWebhookSubscription(subscriptionId);
+        subscription.setConsecutiveDeliveryFailures(2);
+        storage.updateWebhookSubscription(subscription);
+        WebhookSubscriptionDto updated = storage.getWebhookSubscription(subscriptionId);
+        assertEquals(2, updated.getConsecutiveDeliveryFailures());
+
+        long oldCutoff = System.currentTimeMillis() - 86_400_000L;
+        storage.insertWebhookDeliveryLog(WebhookDeliveryLogDto.builder()
+                .deliveryId(deliveryId)
+                .subscriptionId(subscriptionId)
+                .cloudEventId(cloudEventId)
+                .attemptNumber(1)
+                .attemptedOn(new Date(oldCutoff))
+                .build());
+        assertEquals(1, storage.getWebhookDeliveryLog(subscriptionId, 0, 10).size());
+        storage.deleteOldWebhookDeliveryLogs(System.currentTimeMillis());
+        assertEquals(0, storage.getWebhookDeliveryLog(subscriptionId, 0, 10).size());
 
         storage.deleteWebhookSubscription(subscriptionId);
     }

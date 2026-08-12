@@ -915,6 +915,19 @@ public class KafkaSqlRegistryStorage extends ReadOnlyDelegatingStorage implement
         sqlStore.deleteOldWebhookDeliveryLogs(cutoffTimestamp);
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public io.apicurio.registry.storage.dto.WebhookDeliveryDto getWebhookDelivery(long deliveryId)
+            throws RegistryStorageException {
+        return sqlStore.getWebhookDelivery(deliveryId);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public long countPendingWebhookDeliveries() throws RegistryStorageException {
+        return sqlStore.countPendingWebhookDeliveries();
+    }
+
     /**
      * @see io.apicurio.registry.storage.RegistryStorage#deleteArtifactVersion(java.lang.String,
      *      java.lang.String, java.lang.String)

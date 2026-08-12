@@ -61,10 +61,11 @@ public class SqlWebhookSubscriptionRepository {
                     .bind(5, subscription.getSecretHash())
                     .bind(6, subscription.getSecretEncrypted())
                     .bind(7, subscription.isEnabled())
-                    .bind(8, subscription.getDescription())
-                    .bind(9, subscription.getCreatedBy())
-                    .bind(10, toTimestamp(subscription.getCreatedOn()))
-                    .bind(11, toTimestamp(subscription.getModifiedOn()))
+                    .bind(8, subscription.getConsecutiveDeliveryFailures())
+                    .bind(9, subscription.getDescription())
+                    .bind(10, subscription.getCreatedBy())
+                    .bind(11, toTimestamp(subscription.getCreatedOn()))
+                    .bind(12, toTimestamp(subscription.getModifiedOn()))
                     .execute();
         });
     }
@@ -87,9 +88,10 @@ public class SqlWebhookSubscriptionRepository {
                     .bind(4, subscription.getSecretHash())
                     .bind(5, subscription.getSecretEncrypted())
                     .bind(6, subscription.isEnabled())
-                    .bind(7, subscription.getDescription())
-                    .bind(8, toTimestamp(subscription.getModifiedOn()))
-                    .bind(9, subscription.getSubscriptionId())
+                    .bind(7, subscription.getConsecutiveDeliveryFailures())
+                    .bind(8, subscription.getDescription())
+                    .bind(9, toTimestamp(subscription.getModifiedOn()))
+                    .bind(10, subscription.getSubscriptionId())
                     .execute();
             if (updated == 0) {
                 throw new WebhookSubscriptionNotFoundException(subscription.getSubscriptionId());

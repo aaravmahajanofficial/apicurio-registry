@@ -1599,8 +1599,8 @@ public abstract class CommonSqlStatements implements SqlStatements {
         return """
                 INSERT INTO webhook_subscriptions
                 (subscriptionId, url, eventTypes, groupIdFilter, artifactTypeFilter, secretHash,
-                 secretEncrypted, enabled, description, createdBy, createdOn, modifiedOn)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 secretEncrypted, enabled, consecutiveDeliveryFailures, description, createdBy, createdOn, modifiedOn)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
     }
 
@@ -1609,7 +1609,8 @@ public abstract class CommonSqlStatements implements SqlStatements {
         return """
                 UPDATE webhook_subscriptions
                 SET url = ?, eventTypes = ?, groupIdFilter = ?, artifactTypeFilter = ?, secretHash = ?,
-                    secretEncrypted = ?, enabled = ?, description = ?, modifiedOn = ?
+                    secretEncrypted = ?, enabled = ?, consecutiveDeliveryFailures = ?, description = ?,
+                    modifiedOn = ?
                 WHERE subscriptionId = ?
                 """;
     }
@@ -1747,5 +1748,15 @@ public abstract class CommonSqlStatements implements SqlStatements {
     @Override
     public String deleteOldWebhookDeliveryLogs() {
         return "DELETE FROM webhook_delivery_log WHERE attemptedOn < ?";
+    }
+
+    @Override
+    public String selectWebhookDeliveryById() {
+        return "SELECT * FROM webhook_deliveries WHERE deliveryId = ?";
+    }
+
+    @Override
+    public String countPendingWebhookDeliveries() {
+        return "SELECT COUNT(*) FROM webhook_deliveries WHERE status IN ('PENDING', 'IN_PROGRESS')";
     }
 }

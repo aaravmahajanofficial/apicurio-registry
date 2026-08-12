@@ -915,4 +915,10 @@ public interface SqlStatements {
 
     /** @return DELETE log rows older than cutoff */
     String deleteOldWebhookDeliveryLogs();
+
+    /** @return SELECT delivery by {@code deliveryId} */
+    String selectWebhookDeliveryById();
+
+    /** @return COUNT of {@code PENDING} and {@code IN_PROGRESS} deliveries */
+    String countPendingWebhookDeliveries();
 }
